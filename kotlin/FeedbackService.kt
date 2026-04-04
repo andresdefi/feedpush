@@ -15,7 +15,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 // MARK: FeedbackService
-// Sends feedback to a Telegram bot using the Telegram Bot API.
+// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
 // Uses native HttpURLConnection with coroutines -- no third-party dependencies.
 
 sealed class FeedbackResult {
@@ -25,14 +25,6 @@ sealed class FeedbackResult {
 
 object FeedbackService {
 
-    /**
-     * Sends feedback to the configured Telegram bot.
-     * Runs on Dispatchers.IO automatically.
-     *
-     * @param context Android context (for reading app version)
-     * @param text The feedback message (max 2000 characters)
-     * @param email Optional email for follow-up
-     */
     suspend fun send(context: Context, text: String, email: String? = null): FeedbackResult {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return FeedbackResult.Error("Feedback text cannot be empty.")
@@ -41,21 +33,18 @@ object FeedbackService {
 
         return withContext(Dispatchers.IO) {
             try {
-                val token = FeedbackConfig.botToken()
-                val url = URL("https://api.telegram.org/bot$token/sendMessage")
-                val connection = url.openConnection() as HttpURLConnection
+                val (url, body) = when (FeedbackConfig.channel) {
+                    FeedbackChannel.TELEGRAM -> buildTelegramPayload(message)
+                    FeedbackChannel.DISCORD -> buildDiscordPayload(message)
+                    FeedbackChannel.SLACK -> buildSlackPayload(message)
+                }
 
+                val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.doOutput = true
                 connection.connectTimeout = 15_000
                 connection.readTimeout = 15_000
-
-                val body = JSONObject().apply {
-                    put("chat_id", FeedbackConfig.chatID)
-                    put("text", message)
-                    put("parse_mode", "Markdown")
-                }
 
                 connection.outputStream.use { os ->
                     os.write(body.toString().toByteArray(Charsets.UTF_8))
@@ -63,13 +52,14 @@ object FeedbackService {
 
                 val responseCode = connection.responseCode
 
-                if (responseCode == 200) {
+                // Discord returns 204 No Content on success
+                if (responseCode in 200..299) {
                     FeedbackResult.Success
                 } else {
                     val errorBody = connection.errorStream?.let { stream ->
                         BufferedReader(InputStreamReader(stream)).use { it.readText() }
                     } ?: "Unknown error"
-                    FeedbackResult.Error("Telegram API error ($responseCode): $errorBody")
+                    FeedbackResult.Error("API error ($responseCode): $errorBody")
                 }
             } catch (e: Exception) {
                 FeedbackResult.Error("Network error: ${e.localizedMessage ?: e.message ?: "Unknown error"}")
@@ -77,7 +67,37 @@ object FeedbackService {
         }
     }
 
-    // Visible for testing
+    // MARK: Payload Builders
+
+    private fun buildTelegramPayload(message: String): Pair<URL, JSONObject> {
+        val token = FeedbackConfig.botToken()
+        val url = URL("https://api.telegram.org/bot$token/sendMessage")
+        val body = JSONObject().apply {
+            put("chat_id", FeedbackConfig.chatID)
+            put("text", message)
+            put("parse_mode", "Markdown")
+        }
+        return url to body
+    }
+
+    private fun buildDiscordPayload(message: String): Pair<URL, JSONObject> {
+        val url = URL(FeedbackConfig.webhookURL())
+        val body = JSONObject().apply {
+            put("content", message)
+        }
+        return url to body
+    }
+
+    private fun buildSlackPayload(message: String): Pair<URL, JSONObject> {
+        val url = URL(FeedbackConfig.webhookURL())
+        val body = JSONObject().apply {
+            put("text", message)
+        }
+        return url to body
+    }
+
+    // MARK: Message Formatting
+
     internal fun buildMessage(context: Context?, text: String, email: String?): String {
         val appName = FeedbackConfig.appName
 

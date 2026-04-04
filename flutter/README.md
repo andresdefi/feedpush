@@ -1,6 +1,6 @@
 # FeedPush - Flutter (Dart)
 
-Drop-in feedback module for Flutter apps. Users tap a button, type their feedback, and you receive it instantly via Telegram.
+Drop-in feedback module for Flutter apps. Users tap a button, type their feedback, and you receive it instantly via Telegram, Discord, or Slack.
 
 ## Requirements
 
@@ -31,31 +31,29 @@ Copy these four files into your project (e.g., `lib/feedback/`):
 
 Copy `feedback_test.dart` into your `test/` directory.
 
-### 2. Create your Telegram bot
+### 2. Choose your delivery channel
 
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts
-3. Copy the bot token you receive
-4. To get your chat ID, message [@userinfobot](https://t.me/userinfobot) -- it will reply with your ID
+FeedPush supports Telegram, Discord, and Slack. See the Swift README for setup instructions per channel.
 
-### 3. Generate the obfuscated token
-
-Run in DartPad or a Dart terminal:
+### 3. Generate the obfuscated credentials
 
 ```dart
-print('YOUR_BOT_TOKEN_HERE'.codeUnits);
+print('YOUR_TOKEN_OR_URL'.codeUnits);
 ```
-
-This outputs a list like `[49, 50, 51, ...]`. Copy this list.
 
 ### 4. Configure
 
-Open `feedback_config.dart` and set:
+Open `feedback_config.dart` and set your channel and credentials:
 
 ```dart
-static const List<int> _tokenCodes = [49, 50, 51, ...];
+static const FeedbackChannel channel = FeedbackChannel.discord;  // or .telegram, .slack
 
+// For Telegram:
+static const List<int> _tokenCodes = [49, 50, 51, ...];
 static const String chatID = '123456789';
+
+// For Discord or Slack:
+static const List<int> _webhookURLCodes = [104, 116, 116, ...];
 
 static const String appName = 'My App';
 ```
@@ -107,7 +105,7 @@ The feedback message includes the app name, version, platform (iOS/Android), and
 
 ## Security notes
 
-- The bot token is stored as a list of char codes, not a plain string. This prevents it from appearing in a basic `strings` dump of your binary.
+- All credentials are stored as char code lists, not plain strings. This prevents them from appearing in a basic `strings` dump of your binary.
 - A 60-second cooldown prevents rapid re-sends. The cooldown persists across app restarts via shared_preferences.
 - Feedback text is capped at 2000 characters.
-- This is obfuscation, not encryption. If someone decompiles your app and actively reverse-engineers it, they can recover the token. The risk is low -- worst case is spam in your Telegram chat. Revoke and rotate the token via @BotFather if needed.
+- For Discord/Slack, a leak only allows posting to one channel. For Telegram, revoke via @BotFather if needed.

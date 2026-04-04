@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'feedback_config.dart';
 
 // FeedbackService
-// Sends feedback to a Telegram bot using the Telegram Bot API.
+// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
 // Uses the `http` package -- the only external dependency.
 
 class FeedbackResult {
@@ -19,11 +19,6 @@ class FeedbackResult {
 }
 
 class FeedbackService {
-  /// Sends feedback to the configured Telegram bot.
-  ///
-  /// [text] - The feedback message (max 2000 characters).
-  /// [email] - Optional email for follow-up.
-  /// [client] - Optional HTTP client (injectable for testing).
   static Future<FeedbackResult> send({
     required String text,
     String? email,
@@ -35,14 +30,29 @@ class FeedbackService {
     }
 
     final message = await buildMessage(text: trimmed, email: email);
-    final token = FeedbackConfig.botToken;
-    final url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
 
-    final body = jsonEncode({
-      'chat_id': FeedbackConfig.chatID,
-      'text': message,
-      'parse_mode': 'Markdown',
-    });
+    final Uri url;
+    final String body;
+
+    switch (FeedbackConfig.channel) {
+      case FeedbackChannel.telegram:
+        final token = FeedbackConfig.botToken;
+        url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
+        body = jsonEncode({
+          'chat_id': FeedbackConfig.chatID,
+          'text': message,
+          'parse_mode': 'Markdown',
+        });
+        break;
+      case FeedbackChannel.discord:
+        url = Uri.parse(FeedbackConfig.webhookURL);
+        body = jsonEncode({'content': message});
+        break;
+      case FeedbackChannel.slack:
+        url = Uri.parse(FeedbackConfig.webhookURL);
+        body = jsonEncode({'text': message});
+        break;
+    }
 
     try {
       final httpClient = client ?? http.Client();
@@ -52,14 +62,14 @@ class FeedbackService {
         body: body,
       );
 
-      // Close the client only if we created it
       if (client == null) httpClient.close();
 
-      if (response.statusCode == 200) {
+      // Discord returns 204 No Content on success
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         return const FeedbackResult.success();
       } else {
         return FeedbackResult.failure(
-          'Telegram API error (${response.statusCode}): ${response.body}',
+          'API error (${response.statusCode}): ${response.body}',
         );
       }
     } catch (e) {
@@ -67,7 +77,6 @@ class FeedbackService {
     }
   }
 
-  // Visible for testing
   static Future<String> buildMessage({
     required String text,
     String? email,

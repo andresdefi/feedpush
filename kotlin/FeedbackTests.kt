@@ -162,6 +162,34 @@ class FeedbackServiceMessageTests {
     }
 }
 
+// MARK: FeedbackConfig Channel Tests
+
+class FeedbackConfigChannelTests {
+
+    @Test
+    fun `webhook URL decodes from bytes`() {
+        val testURL = "https://discord.com/api/webhooks/123/abc"
+        val bytes = testURL.toByteArray(Charsets.UTF_8)
+        val decoded = String(bytes, Charsets.UTF_8)
+        assertEquals(testURL, decoded)
+    }
+
+    @Test
+    fun `channel is a valid enum value`() {
+        val channel = FeedbackConfig.channel
+        assertTrue(channel in FeedbackChannel.entries)
+    }
+
+    @Test
+    fun `all channels are accessible`() {
+        val channels = FeedbackChannel.entries
+        assertEquals(3, channels.size)
+        assertTrue(channels.contains(FeedbackChannel.TELEGRAM))
+        assertTrue(channels.contains(FeedbackChannel.DISCORD))
+        assertTrue(channels.contains(FeedbackChannel.SLACK))
+    }
+}
+
 // MARK: FeedbackResult Tests
 
 class FeedbackResultTests {

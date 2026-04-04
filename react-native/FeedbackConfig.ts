@@ -1,29 +1,60 @@
-// FeedbackConfig
-// Holds the Telegram bot token (obfuscated), chat ID, and app name.
-//
-// HOW TO GENERATE THE TOKEN CHAR CODES:
-// 1. Open a Node.js or browser console
-// 2. Run: console.log(JSON.stringify([..."YOUR_BOT_TOKEN"].map(c => c.charCodeAt(0))))
-// 3. Copy the output array and paste it into `tokenCodes` below
-//
-// This prevents the token from appearing in a plain `strings` dump of your bundle.
-// It is NOT encryption -- just obfuscation to stop casual extraction.
+// FeedbackChannel
+// The delivery channel for feedback messages.
 
+export type FeedbackChannel = "telegram" | "discord" | "slack";
+
+// FeedbackConfig
+// Holds the delivery channel, credentials, and app name.
+//
+// TELEGRAM SETUP:
+// 1. Create a bot via @BotFather on Telegram
+// 2. Generate the obfuscated token char codes:
+//    console.log(JSON.stringify([..."YOUR_BOT_TOKEN"].map(c => c.charCodeAt(0))))
+// 3. Paste the array into `tokenCodes` and set your `chatID`
+//
+// DISCORD SETUP:
+// 1. In your Discord server, go to Channel Settings > Integrations > Webhooks
+// 2. Create a webhook and copy the URL
+// 3. Generate the obfuscated URL char codes using the same command with your webhook URL
+// 4. Paste the array into `webhookURLCodes`
+//
+// SLACK SETUP:
+// 1. Create a Slack app at api.slack.com/apps
+// 2. Enable Incoming Webhooks and create one for your channel
+// 3. Generate the obfuscated URL char codes using the same command with your webhook URL
+// 4. Paste the array into `webhookURLCodes`
+
+// MARK: Telegram Configuration
+
+// Obfuscated bot token (only needed for "telegram")
 const tokenCodes: number[] = [
   // Example: these codes decode to "123456:ABC-DEF"
-  // Run the command above with your real token and paste the result here
   49, 50, 51, 52, 53, 54, 58, 65, 66, 67, 45, 68, 69, 70,
 ];
 
+// MARK: Discord / Slack Configuration
+
+// Obfuscated webhook URL (only needed for "discord" or "slack")
+const webhookURLCodes: number[] = [
+  // Paste your obfuscated webhook URL char codes here
+];
+
 export const FeedbackConfig = {
-  // Decodes the bot token at runtime
+  // Which channel to use for sending feedback
+  channel: "telegram" as FeedbackChannel,
+
+  // Telegram chat ID where feedback messages will arrive (only needed for "telegram")
+  chatID: "YOUR_CHAT_ID",
+
+  // The name of your app (shown in the feedback message)
+  appName: "My App",
+
+  // Decoded values
   get botToken(): string {
     return String.fromCharCode(...tokenCodes);
   },
 
-  // Your Telegram chat ID where feedback messages will arrive
-  chatID: "YOUR_CHAT_ID",
-
-  // The name of your app (shown in the Telegram message)
-  appName: "My App",
+  get webhookURL(): string {
+    return String.fromCharCode(...webhookURLCodes);
+  },
 } as const;

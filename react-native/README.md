@@ -1,6 +1,6 @@
 # FeedPush - React Native (TypeScript)
 
-Drop-in feedback module for React Native / Expo apps. Users tap a button, type their feedback, and you receive it instantly via Telegram.
+Drop-in feedback module for React Native / Expo apps. Users tap a button, type their feedback, and you receive it instantly via Telegram, Discord, or Slack.
 
 ## Requirements
 
@@ -29,31 +29,29 @@ Copy these files into your project (e.g., `src/feedback/`):
 
 Copy `FeedbackService.test.ts` alongside your other tests.
 
-### 2. Create your Telegram bot
+### 2. Choose your delivery channel
 
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts
-3. Copy the bot token you receive
-4. To get your chat ID, message [@userinfobot](https://t.me/userinfobot) -- it will reply with your ID
+FeedPush supports Telegram, Discord, and Slack. See the Swift README for setup instructions per channel.
 
-### 3. Generate the obfuscated token
-
-Run in a Node.js or browser console:
+### 3. Generate the obfuscated credentials
 
 ```js
-console.log(JSON.stringify([..."YOUR_BOT_TOKEN_HERE"].map(c => c.charCodeAt(0))))
+console.log(JSON.stringify([..."YOUR_TOKEN_OR_URL"].map(c => c.charCodeAt(0))))
 ```
-
-This outputs an array like `[49,50,51,...]`. Copy this array.
 
 ### 4. Configure
 
-Open `FeedbackConfig.ts` and set:
+Open `FeedbackConfig.ts` and set your channel and credentials:
 
 ```typescript
-const tokenCodes: number[] = [49, 50, 51, ...];
+channel: "discord",  // or "telegram", "slack"
 
+// For Telegram:
+const tokenCodes: number[] = [49, 50, 51, ...];
 chatID: "123456789",
+
+// For Discord or Slack:
+const webhookURLCodes: number[] = [104, 116, 116, ...];
 
 appName: "My App",
 ```
@@ -101,7 +99,7 @@ The feedback message includes the app name, version, platform (iOS/Android), and
 
 ## Security notes
 
-- The bot token is stored as an array of char codes, not a plain string. This prevents it from appearing in a basic `strings` dump of your bundle.
+- All credentials are stored as char code arrays, not plain strings. This prevents them from appearing in a basic `strings` dump of your bundle.
 - A 60-second cooldown prevents rapid re-sends. The cooldown persists across app restarts via AsyncStorage.
 - Feedback text is capped at 2000 characters.
-- This is obfuscation, not encryption. If someone reverse-engineers your app bundle, they can recover the token. The risk is low -- worst case is spam in your Telegram chat. Revoke and rotate the token via @BotFather if needed.
+- For Discord/Slack, a leak only allows posting to one channel. For Telegram, revoke via @BotFather if needed.

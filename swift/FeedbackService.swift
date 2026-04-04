@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 // MARK: - FeedbackService
-// Sends feedback to a Telegram bot using the Telegram Bot API.
+// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
 // Uses native URLSession with async/await -- no third-party dependencies.
 
 enum FeedbackError: LocalizedError {
@@ -18,9 +18,9 @@ enum FeedbackError: LocalizedError {
         case .emptyFeedback:
             return "Feedback text cannot be empty."
         case .invalidURL:
-            return "Invalid Telegram API URL."
+            return "Invalid API URL."
         case .serverError(let message):
-            return "Telegram API error: \(message)"
+            return "API error: \(message)"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
         }
@@ -29,17 +29,45 @@ enum FeedbackError: LocalizedError {
 
 enum FeedbackService {
 
-    /// Sends feedback to the configured Telegram bot.
-    /// - Parameters:
-    ///   - text: The feedback message (max 2000 characters).
-    ///   - email: Optional email for follow-up.
-    ///   - session: URLSession to use (injectable for testing).
+    /// Sends feedback using the configured delivery channel.
     static func send(text: String, email: String? = nil, session: URLSession = .shared) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }
 
         let message = buildMessage(text: trimmed, email: email)
 
+        let request: URLRequest
+        switch FeedbackConfig.channel {
+        case .telegram:
+            request = try buildTelegramRequest(message: message)
+        case .discord:
+            request = try buildDiscordRequest(message: message)
+        case .slack:
+            request = try buildSlackRequest(message: message)
+        }
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw FeedbackError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FeedbackError.serverError("Invalid response")
+        }
+
+        // Discord returns 204 No Content on success
+        let isSuccess = httpResponse.statusCode >= 200 && httpResponse.statusCode < 300
+        if !isSuccess {
+            let responseBody = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw FeedbackError.serverError(responseBody)
+        }
+    }
+
+    // MARK: - Request Builders
+
+    private static func buildTelegramRequest(message: String) throws -> URLRequest {
         let token = FeedbackConfig.botToken
         guard let url = URL(string: "https://api.telegram.org/bot\(token)/sendMessage") else {
             throw FeedbackError.invalidURL
@@ -55,25 +83,40 @@ enum FeedbackService {
             "parse_mode": "Markdown"
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response): (Data, URLResponse)
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw FeedbackError.networkError(error)
-        }
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FeedbackError.serverError("Invalid response")
-        }
-
-        if httpResponse.statusCode != 200 {
-            let responseBody = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw FeedbackError.serverError(responseBody)
-        }
+        return request
     }
 
-    // MARK: - Internal (visible for testing)
+    private static func buildDiscordRequest(message: String) throws -> URLRequest {
+        let webhookURL = FeedbackConfig.webhookURL
+        guard let url = URL(string: webhookURL) else {
+            throw FeedbackError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = ["content": message]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    private static func buildSlackRequest(message: String) throws -> URLRequest {
+        let webhookURL = FeedbackConfig.webhookURL
+        guard let url = URL(string: webhookURL) else {
+            throw FeedbackError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = ["text": message]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    // MARK: - Message Formatting
 
     static func buildMessage(text: String, email: String?) -> String {
         let appName = FeedbackConfig.appName
@@ -81,7 +124,7 @@ enum FeedbackService {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
 
         #if os(iOS)
-        let platformEmoji = "\u{1F34E}" // apple emoji
+        let platformEmoji = "\u{1F34E}"
         let platform = "iOS \(UIDevice.current.systemVersion)"
         #else
         let platformEmoji = "\u{1F4F1}"

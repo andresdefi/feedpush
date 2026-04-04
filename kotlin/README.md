@@ -1,6 +1,6 @@
 # FeedPush - Kotlin (Android)
 
-Drop-in feedback module for Jetpack Compose apps. Users tap a button, type their feedback, and you receive it instantly via Telegram.
+Drop-in feedback module for Jetpack Compose apps. Users tap a button, type their feedback, and you receive it instantly via Telegram, Discord, or Slack.
 
 ## Requirements
 
@@ -33,31 +33,29 @@ Make sure your `AndroidManifest.xml` includes:
 <uses-permission android:name="android.permission.INTERNET" />
 ```
 
-### 3. Create your Telegram bot
+### 3. Choose your delivery channel
 
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts
-3. Copy the bot token you receive
-4. To get your chat ID, message [@userinfobot](https://t.me/userinfobot) -- it will reply with your ID
+FeedPush supports Telegram, Discord, and Slack. See the Swift README for setup instructions per channel -- the process is the same, only the obfuscation command differs.
 
-### 4. Generate the obfuscated token
-
-Run in a Kotlin scratch file or terminal:
+### 4. Generate the obfuscated credentials
 
 ```kotlin
-kotlin -e 'val t = "YOUR_BOT_TOKEN_HERE"; println(t.toByteArray().joinToString(", ") { it.toString() })'
+kotlin -e 'val t = "YOUR_TOKEN_OR_URL"; println(t.toByteArray().joinToString(", ") { it.toString() })'
 ```
-
-This outputs bytes like `49, 50, 51, ...`. Copy this output.
 
 ### 5. Configure
 
-Open `FeedbackConfig.kt` and set:
+Open `FeedbackConfig.kt` and set your channel and credentials:
 
 ```kotlin
-private val tokenBytes: ByteArray = byteArrayOf(49, 50, 51, ...)
+val channel: FeedbackChannel = FeedbackChannel.DISCORD  // or TELEGRAM, SLACK
 
+// For Telegram:
+private val tokenBytes: ByteArray = byteArrayOf(49, 50, 51, ...)
 const val chatID: String = "123456789"
+
+// For Discord or Slack:
+private val webhookURLBytes: ByteArray = byteArrayOf(104, 116, 116, ...)
 
 const val appName: String = "My App"
 ```
@@ -102,9 +100,17 @@ FeedbackButton(
 
 The feedback message includes the app name, version, Android version, and timestamp automatically.
 
+## Which channel should I use?
+
+| Channel | Security | If credential leaks... |
+|---|---|---|
+| **Discord** | Best | Attacker can only post to one channel |
+| **Slack** | Best | Same as Discord, plus auto-leak detection |
+| **Telegram** | Good | Attacker gets full bot control |
+
 ## Security notes
 
-- The bot token is stored as a `ByteArray`, not a plain string. This prevents it from appearing in a basic `strings` dump of your APK.
+- All credentials are stored as byte arrays, not plain strings. This prevents them from appearing in a basic `strings` dump of your APK.
 - A 60-second cooldown prevents rapid re-sends. The cooldown persists across app restarts via SharedPreferences.
 - Feedback text is capped at 2000 characters.
-- This is obfuscation, not encryption. If someone decompiles your APK and actively reverse-engineers it, they can recover the token. The risk is low -- worst case is spam in your Telegram chat. Revoke and rotate the token via @BotFather if needed.
+- This is obfuscation, not encryption. For Discord/Slack, a leak only allows posting to one channel. For Telegram, revoke and rotate the token via @BotFather if needed.

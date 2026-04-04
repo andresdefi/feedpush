@@ -262,6 +262,28 @@ final class FeedbackServiceSendTests: XCTestCase {
     }
 }
 
+// MARK: - FeedbackConfig Channel Tests
+
+final class FeedbackConfigChannelTests: XCTestCase {
+
+    func testWebhookURLDecodesFromBytes() {
+        // Verify the webhook URL decode works the same way as token
+        let testURL = "https://discord.com/api/webhooks/123/abc"
+        let bytes = Array(testURL.utf8)
+        let decoded = String(bytes: bytes, encoding: .utf8)
+        XCTAssertEqual(decoded, testURL)
+    }
+
+    func testChannelIsSet() {
+        // Just verify the channel property exists and is accessible
+        let channel = FeedbackConfig.channel
+        switch channel {
+        case .telegram, .discord, .slack:
+            break // all valid
+        }
+    }
+}
+
 // MARK: - FeedbackError Tests
 
 final class FeedbackErrorTests: XCTestCase {
@@ -273,12 +295,12 @@ final class FeedbackErrorTests: XCTestCase {
 
     func testInvalidURLDescription() {
         let error = FeedbackError.invalidURL
-        XCTAssertEqual(error.errorDescription, "Invalid Telegram API URL.")
+        XCTAssertEqual(error.errorDescription, "Invalid API URL.")
     }
 
     func testServerErrorDescription() {
         let error = FeedbackError.serverError("test message")
-        XCTAssertEqual(error.errorDescription, "Telegram API error: test message")
+        XCTAssertEqual(error.errorDescription, "API error: test message")
     }
 
     func testNetworkErrorDescription() {

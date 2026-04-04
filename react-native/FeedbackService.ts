@@ -3,20 +3,13 @@ import * as Application from "expo-application";
 import { FeedbackConfig } from "./FeedbackConfig";
 
 // FeedbackService
-// Sends feedback to a Telegram bot using the Telegram Bot API.
+// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
 // Uses native `fetch` -- no third-party networking dependencies.
 
 export type FeedbackResult =
   | { success: true }
   | { success: false; error: string };
 
-/**
- * Sends feedback to the configured Telegram bot.
- *
- * @param text - The feedback message (max 2000 characters)
- * @param email - Optional email for follow-up
- * @returns FeedbackResult indicating success or failure
- */
 export async function sendFeedback(
   text: string,
   email?: string
@@ -27,28 +20,49 @@ export async function sendFeedback(
   }
 
   const message = buildMessage(trimmed, email);
-  const token = FeedbackConfig.botToken;
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+  let url: string;
+  let body: string;
+
+  switch (FeedbackConfig.channel) {
+    case "telegram": {
+      const token = FeedbackConfig.botToken;
+      url = `https://api.telegram.org/bot${token}/sendMessage`;
+      body = JSON.stringify({
+        chat_id: FeedbackConfig.chatID,
+        text: message,
+        parse_mode: "Markdown",
+      });
+      break;
+    }
+    case "discord": {
+      url = FeedbackConfig.webhookURL;
+      body = JSON.stringify({ content: message });
+      break;
+    }
+    case "slack": {
+      url = FeedbackConfig.webhookURL;
+      body = JSON.stringify({ text: message });
+      break;
+    }
+  }
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: FeedbackConfig.chatID,
-        text: message,
-        parse_mode: "Markdown",
-      }),
+      body,
     });
 
+    // Discord returns 204 No Content on success
     if (response.ok) {
       return { success: true };
     }
 
-    const body = await response.text();
+    const responseBody = await response.text();
     return {
       success: false,
-      error: `Telegram API error (${response.status}): ${body}`,
+      error: `API error (${response.status}): ${responseBody}`,
     };
   } catch (e) {
     const errorMessage =
@@ -57,7 +71,6 @@ export async function sendFeedback(
   }
 }
 
-// Visible for testing
 export function buildMessage(text: string, email?: string): string {
   const appName = FeedbackConfig.appName;
   const appVersion =
