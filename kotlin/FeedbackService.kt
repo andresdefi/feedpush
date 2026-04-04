@@ -25,11 +25,11 @@ sealed class FeedbackResult {
 
 object FeedbackService {
 
-    suspend fun send(context: Context, text: String, email: String? = null): FeedbackResult {
+    suspend fun send(context: Context, text: String): FeedbackResult {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return FeedbackResult.Error("Feedback text cannot be empty.")
 
-        val message = buildMessage(context, trimmed, email)
+        val message = buildMessage(context, trimmed)
 
         return withContext(Dispatchers.IO) {
             try {
@@ -98,7 +98,7 @@ object FeedbackService {
 
     // MARK: Message Formatting
 
-    internal fun buildMessage(context: Context?, text: String, email: String?): String {
+    internal fun buildMessage(context: Context?, text: String): String {
         val appName = FeedbackConfig.appName
 
         val appVersion = try {
@@ -113,13 +113,6 @@ object FeedbackService {
         formatter.timeZone = TimeZone.getTimeZone("UTC")
         val timestamp = formatter.format(Date())
 
-        val emailValue = email?.trim() ?: ""
-        val emailLine = if (emailValue.isEmpty()) {
-            "\n\uD83D\uDCE7 Email: (not provided)"
-        } else {
-            "\n\uD83D\uDCE7 Email: $emailValue"
-        }
-
         return buildString {
             appendLine("\uD83D\uDCF1 App: $appName")
             appendLine("\uD83D\uDCE6 Version: $appVersion")
@@ -128,7 +121,6 @@ object FeedbackService {
             appendLine()
             appendLine("\uD83D\uDCAC Feedback:")
             append(text)
-            append(emailLine)
         }
     }
 }

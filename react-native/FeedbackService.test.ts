@@ -83,53 +83,19 @@ describe("buildMessage", () => {
     expect(message).toContain("UTC");
   });
 
-  test("message with no email shows not provided", () => {
-    const message = buildMessage("Test");
-    expect(message).toContain("Email: (not provided)");
-  });
-
-  test("message with undefined email shows not provided", () => {
-    const message = buildMessage("Test", undefined);
-    expect(message).toContain("Email: (not provided)");
-  });
-
-  test("message with empty email shows not provided", () => {
-    const message = buildMessage("Test", "");
-    expect(message).toContain("Email: (not provided)");
-  });
-
-  test("message with whitespace only email shows not provided", () => {
-    const message = buildMessage("Test", "   ");
-    expect(message).toContain("Email: (not provided)");
-  });
-
-  test("message with email shows email", () => {
-    const email = "user@example.com";
-    const message = buildMessage("Test", email);
-    expect(message).toContain(`Email: ${email}`);
-    expect(message).not.toContain("(not provided)");
-  });
-
-  test("message with email with whitespace trims it", () => {
-    const message = buildMessage("Test", "  user@example.com  ");
-    expect(message).toContain("Email: user@example.com");
-  });
-
   test("message order is correct", () => {
-    const message = buildMessage("My feedback", "a@b.com");
+    const message = buildMessage("My feedback");
 
     const appIndex = message.indexOf("App:");
     const versionIndex = message.indexOf("Version:");
     const platformIndex = message.indexOf("Platform:");
     const timeIndex = message.indexOf("Time:");
     const feedbackIndex = message.indexOf("Feedback:");
-    const emailIndex = message.indexOf("Email:");
 
     expect(appIndex).toBeLessThan(versionIndex);
     expect(versionIndex).toBeLessThan(platformIndex);
     expect(platformIndex).toBeLessThan(timeIndex);
     expect(timeIndex).toBeLessThan(feedbackIndex);
-    expect(feedbackIndex).toBeLessThan(emailIndex);
   });
 
   test("message with special characters", () => {
@@ -236,16 +202,4 @@ describe("sendFeedback", () => {
     expect(result.error).toContain("Network");
   });
 
-  test("includes email in message when provided", async () => {
-    (global as any).fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-    });
-
-    const { sendFeedback } = require("./FeedbackService");
-    await sendFeedback("Test", "test@test.com");
-
-    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
-    expect(body.text).toContain("test@test.com");
-  });
 });

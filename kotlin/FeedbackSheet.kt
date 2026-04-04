@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -46,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,7 +52,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // MARK: FeedbackSheet
-// A modal bottom sheet with a feedback text field, optional email field,
+// A modal bottom sheet with a feedback text field,
 // send button with cooldown, and character counter.
 
 private const val MAX_CHARACTERS = 2000
@@ -66,7 +64,6 @@ private const val COOLDOWN_KEY = "feedpush_last_send_timestamp"
 fun FeedbackSheet(
     onDismiss: () -> Unit,
     feedbackPlaceholder: String = "What's on your mind?",
-    emailPlaceholder: String = "Leave your email if you'd like us to follow up (totally optional)",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."
@@ -77,7 +74,6 @@ fun FeedbackSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var feedbackText by remember { mutableStateOf("") }
-    var emailText by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
@@ -169,19 +165,6 @@ fun FeedbackSheet(
                     textAlign = TextAlign.End
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Email field
-                OutlinedTextField(
-                    value = emailText,
-                    onValueChange = { emailText = it },
-                    placeholder = { Text(emailPlaceholder, fontSize = 13.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Send button
@@ -191,8 +174,7 @@ fun FeedbackSheet(
                             isSending = true
                             showError = false
 
-                            val email = emailText.trim().ifEmpty { null }
-                            val result = FeedbackService.send(context, feedbackText, email)
+                            val result = FeedbackService.send(context, feedbackText)
 
                             when (result) {
                                 is FeedbackResult.Success -> {
@@ -201,7 +183,6 @@ fun FeedbackSheet(
                                     prefs.edit().putLong(COOLDOWN_KEY, System.currentTimeMillis()).apply()
                                     cooldownRemaining = COOLDOWN_DURATION
                                     feedbackText = ""
-                                    emailText = ""
                                     delay(2000)
                                     onDismiss()
                                 }

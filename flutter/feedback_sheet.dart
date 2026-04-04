@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'feedback_service.dart';
 
 // FeedbackSheet
-// A modal bottom sheet with a feedback text field, optional email field,
+// A modal bottom sheet with a feedback text field,
 // send button with cooldown, and character counter.
 
 const _maxCharacters = 2000;
@@ -16,7 +16,6 @@ const _cooldownKey = 'feedpush_last_send_timestamp';
 
 class FeedbackSheet extends StatefulWidget {
   final String feedbackPlaceholder;
-  final String emailPlaceholder;
   final String sendButtonText;
   final String successMessage;
   final String errorMessage;
@@ -24,8 +23,6 @@ class FeedbackSheet extends StatefulWidget {
   const FeedbackSheet({
     super.key,
     this.feedbackPlaceholder = "What's on your mind?",
-    this.emailPlaceholder =
-        "Leave your email if you'd like us to follow up (totally optional)",
     this.sendButtonText = 'Send',
     this.successMessage = 'Thank you for your feedback!',
     this.errorMessage =
@@ -38,7 +35,6 @@ class FeedbackSheet extends StatefulWidget {
 
 class _FeedbackSheetState extends State<FeedbackSheet> {
   final _feedbackController = TextEditingController();
-  final _emailController = TextEditingController();
   final _feedbackFocus = FocusNode();
 
   bool _isSending = false;
@@ -63,7 +59,6 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   @override
   void dispose() {
     _feedbackController.dispose();
-    _emailController.dispose();
     _feedbackFocus.dispose();
     _cooldownTimer?.cancel();
     super.dispose();
@@ -109,11 +104,8 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       _showError = false;
     });
 
-    final email = _emailController.text.trim();
-
     final result = await FeedbackService.send(
       text: _feedbackController.text,
-      email: email.isEmpty ? null : email,
     );
 
     if (!mounted) return;
@@ -125,7 +117,6 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       setState(() => _cooldownRemaining = _cooldownDuration);
       _startCooldownTimer();
       _feedbackController.clear();
-      _emailController.clear();
 
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) Navigator.of(context).pop();
@@ -186,20 +177,6 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                     ),
                     counterText:
                         '${_feedbackController.text.length} / $_maxCharacters',
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Email field
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: widget.emailPlaceholder,
-                    hintStyle: const TextStyle(fontSize: 13),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -90,7 +90,7 @@ You can customize the button and sheet text:
 ## How it works
 
 1. User taps the feedback button
-2. A modal slides up with a text field and optional email field
+2. A modal slides up with a text field
 3. User types their feedback and taps Send
 4. The app POSTs the message to the Telegram Bot API using native `fetch`
 5. You receive it as a push notification in Telegram

@@ -45,7 +45,6 @@ void main() {
   group('Message formatting', () {
     String buildTestMessage({
       required String text,
-      String? email,
       String appName = 'My App',
       String appVersion = '1.0.0',
       String platform = 'iOS 18.0',
@@ -56,19 +55,13 @@ void main() {
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-      final emailValue = email?.trim() ?? '';
-      final emailLine = emailValue.isEmpty
-          ? '\n\u{1F4E7} Email: (not provided)'
-          : '\n\u{1F4E7} Email: $emailValue';
-
       return '\u{1F4F1} App: $appName\n'
           '\u{1F4E6} Version: $appVersion\n'
           '$platformEmoji Platform: $platform\n'
           '\u{1F554} Time: $timestamp UTC\n'
           '\n'
           '\u{1F4AC} Feedback:\n'
-          '$text'
-          '$emailLine';
+          '$text';
     }
 
     test('message contains app name', () {
@@ -103,49 +96,19 @@ void main() {
       expect(message.contains('UTC'), true);
     });
 
-    test('message with no email shows not provided', () {
-      final message = buildTestMessage(text: 'Test');
-      expect(message.contains('Email: (not provided)'), true);
-    });
-
-    test('message with empty email shows not provided', () {
-      final message = buildTestMessage(text: 'Test', email: '');
-      expect(message.contains('Email: (not provided)'), true);
-    });
-
-    test('message with whitespace only email shows not provided', () {
-      final message = buildTestMessage(text: 'Test', email: '   ');
-      expect(message.contains('Email: (not provided)'), true);
-    });
-
-    test('message with email shows email', () {
-      const email = 'user@example.com';
-      final message = buildTestMessage(text: 'Test', email: email);
-      expect(message.contains('Email: $email'), true);
-      expect(message.contains('(not provided)'), false);
-    });
-
-    test('message with email with whitespace trims it', () {
-      final message =
-          buildTestMessage(text: 'Test', email: '  user@example.com  ');
-      expect(message.contains('Email: user@example.com'), true);
-    });
-
     test('message order is correct', () {
-      final message = buildTestMessage(text: 'My feedback', email: 'a@b.com');
+      final message = buildTestMessage(text: 'My feedback');
 
       final appIndex = message.indexOf('App:');
       final versionIndex = message.indexOf('Version:');
       final platformIndex = message.indexOf('Platform:');
       final timeIndex = message.indexOf('Time:');
       final feedbackIndex = message.indexOf('Feedback:');
-      final emailIndex = message.indexOf('Email:');
 
       expect(appIndex < versionIndex, true);
       expect(versionIndex < platformIndex, true);
       expect(platformIndex < timeIndex, true);
       expect(timeIndex < feedbackIndex, true);
-      expect(feedbackIndex < emailIndex, true);
     });
 
     test('message with special characters', () {

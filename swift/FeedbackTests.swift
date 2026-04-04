@@ -39,97 +39,68 @@ final class FeedbackConfigTests: XCTestCase {
 final class FeedbackServiceMessageTests: XCTestCase {
 
     func testMessageContainsAppName() {
-        let message = FeedbackService.buildMessage(text: "Great app!", email: nil)
+        let message = FeedbackService.buildMessage(text: "Great app!")
         XCTAssertTrue(message.contains("App: \(FeedbackConfig.appName)"))
     }
 
     func testMessageContainsFeedbackText() {
         let feedbackText = "This is my feedback about the app"
-        let message = FeedbackService.buildMessage(text: feedbackText, email: nil)
+        let message = FeedbackService.buildMessage(text: feedbackText)
         XCTAssertTrue(message.contains(feedbackText))
     }
 
     func testMessageContainsFeedbackHeader() {
-        let message = FeedbackService.buildMessage(text: "Test", email: nil)
+        let message = FeedbackService.buildMessage(text: "Test")
         XCTAssertTrue(message.contains("Feedback:"))
     }
 
     func testMessageContainsVersionLine() {
-        let message = FeedbackService.buildMessage(text: "Test", email: nil)
+        let message = FeedbackService.buildMessage(text: "Test")
         XCTAssertTrue(message.contains("Version:"))
     }
 
     func testMessageContainsPlatformLine() {
-        let message = FeedbackService.buildMessage(text: "Test", email: nil)
+        let message = FeedbackService.buildMessage(text: "Test")
         XCTAssertTrue(message.contains("Platform:"))
     }
 
     func testMessageContainsTimestamp() {
-        let message = FeedbackService.buildMessage(text: "Test", email: nil)
+        let message = FeedbackService.buildMessage(text: "Test")
         XCTAssertTrue(message.contains("Time:"))
         XCTAssertTrue(message.contains("UTC"))
     }
 
-    func testMessageWithNoEmailShowsNotProvided() {
-        let message = FeedbackService.buildMessage(text: "Test", email: nil)
-        XCTAssertTrue(message.contains("Email: (not provided)"))
-    }
-
-    func testMessageWithEmptyEmailShowsNotProvided() {
-        let message = FeedbackService.buildMessage(text: "Test", email: "")
-        XCTAssertTrue(message.contains("Email: (not provided)"))
-    }
-
-    func testMessageWithWhitespaceOnlyEmailShowsNotProvided() {
-        let message = FeedbackService.buildMessage(text: "Test", email: "   ")
-        XCTAssertTrue(message.contains("Email: (not provided)"))
-    }
-
-    func testMessageWithEmailShowsEmail() {
-        let email = "user@example.com"
-        let message = FeedbackService.buildMessage(text: "Test", email: email)
-        XCTAssertTrue(message.contains("Email: \(email)"))
-        XCTAssertFalse(message.contains("(not provided)"))
-    }
-
-    func testMessageWithEmailWithWhitespaceTrimsIt() {
-        let message = FeedbackService.buildMessage(text: "Test", email: "  user@example.com  ")
-        XCTAssertTrue(message.contains("Email: user@example.com"))
-    }
-
     func testMessageOrderIsCorrect() {
-        let message = FeedbackService.buildMessage(text: "My feedback", email: "a@b.com")
+        let message = FeedbackService.buildMessage(text: "My feedback")
 
-        // Verify the order: App -> Version -> Platform -> Time -> Feedback -> Email
+        // Verify the order: App -> Version -> Platform -> Time -> Feedback
         let appRange = message.range(of: "App:")!
         let versionRange = message.range(of: "Version:")!
         let platformRange = message.range(of: "Platform:")!
         let timeRange = message.range(of: "Time:")!
         let feedbackRange = message.range(of: "Feedback:")!
-        let emailRange = message.range(of: "Email:")!
 
         XCTAssertTrue(appRange.lowerBound < versionRange.lowerBound)
         XCTAssertTrue(versionRange.lowerBound < platformRange.lowerBound)
         XCTAssertTrue(platformRange.lowerBound < timeRange.lowerBound)
         XCTAssertTrue(timeRange.lowerBound < feedbackRange.lowerBound)
-        XCTAssertTrue(feedbackRange.lowerBound < emailRange.lowerBound)
     }
 
     func testMessageWithSpecialCharactersInFeedback() {
         let text = "Feedback with special chars: <>&\"' and emojis \u{1F600}\u{1F525}"
-        let message = FeedbackService.buildMessage(text: text, email: nil)
+        let message = FeedbackService.buildMessage(text: text)
         XCTAssertTrue(message.contains(text))
     }
 
     func testMessageWithMultilineFeedback() {
         let text = "Line 1\nLine 2\nLine 3"
-        let message = FeedbackService.buildMessage(text: text, email: nil)
+        let message = FeedbackService.buildMessage(text: text)
         XCTAssertTrue(message.contains(text))
     }
 
     func testMessageWithMaxLengthFeedback() {
         let text = String(repeating: "a", count: 2000)
-        let message = FeedbackService.buildMessage(text: text, email: nil)
+        let message = FeedbackService.buildMessage(text: text)
         XCTAssertTrue(message.contains(text))
         // Total message should be under Telegram's 4096 limit
         XCTAssertTrue(message.count <= 4096)
@@ -238,7 +209,7 @@ final class FeedbackServiceSendTests: XCTestCase {
             return (response, "{\"ok\":true}".data(using: .utf8)!)
         }
 
-        try await FeedbackService.send(text: "Hello", email: "test@test.com", session: mockSession)
+        try await FeedbackService.send(text: "Hello", session: mockSession)
 
         let request = try XCTUnwrap(capturedRequest)
 
@@ -258,7 +229,6 @@ final class FeedbackServiceSendTests: XCTestCase {
         XCTAssertEqual(bodyJSON["parse_mode"] as? String, "Markdown")
         let text = try XCTUnwrap(bodyJSON["text"] as? String)
         XCTAssertTrue(text.contains("Hello"))
-        XCTAssertTrue(text.contains("test@test.com"))
     }
 }
 

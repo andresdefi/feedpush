@@ -67,7 +67,7 @@ The simplest to set up, but the token grants more access than needed for this us
 ## How It Works
 
 1. You add a feedback button to your app (typically in settings).
-2. User taps it. A sheet/modal opens with a text field and an optional email field.
+2. User taps it. A sheet/modal opens with a text field.
 3. User types their feedback and taps Send.
 4. The app sends the message to your chosen channel (Telegram, Discord, or Slack).
 5. You receive it as a push notification on your phone.
@@ -77,7 +77,6 @@ Each message includes:
 - Platform and OS version
 - Timestamp (UTC)
 - The feedback text
-- Email (if provided)
 
 ## Security
 

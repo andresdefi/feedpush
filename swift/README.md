@@ -112,7 +112,7 @@ FeedbackSheet(
 ## How it works
 
 1. User taps the feedback button
-2. A sheet slides up with a text field and optional email field
+2. A sheet slides up with a text field
 3. User types their feedback and taps Send
 4. The app POSTs the message to your chosen channel (Telegram, Discord, or Slack)
 5. You receive it as a push notification on your phone

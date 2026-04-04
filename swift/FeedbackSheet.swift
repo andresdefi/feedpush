@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - FeedbackSheet
-// A bottom sheet with a feedback text field, optional email field,
+// A bottom sheet with a feedback text field,
 // send button with cooldown, and character counter.
 
 struct FeedbackSheet: View {
@@ -9,13 +9,11 @@ struct FeedbackSheet: View {
 
     // Configurable strings
     var feedbackPlaceholder: String = "What's on your mind?"
-    var emailPlaceholder: String = "Leave your email if you'd like us to follow up (totally optional)"
     var sendButtonText: String = "Send"
     var successMessage: String = "Thank you for your feedback!"
     var errorMessage: String = "Could not send feedback. Please check your connection and try again."
 
     @State private var feedbackText = ""
-    @State private var emailText = ""
     @State private var isSending = false
     @State private var showSuccess = false
     @State private var showError = false
@@ -29,7 +27,7 @@ struct FeedbackSheet: View {
     private let cooldownKey = "feedpush_last_send_timestamp"
 
     private enum Field {
-        case feedback, email
+        case feedback
     }
 
     var body: some View {
@@ -37,7 +35,6 @@ struct FeedbackSheet: View {
             ScrollView {
                 VStack(spacing: 20) {
                     feedbackField
-                    emailField
                     sendButton
                 }
                 .padding(20)
@@ -102,20 +99,6 @@ struct FeedbackSheet: View {
         }
     }
 
-    // MARK: - Email Field
-
-    private var emailField: some View {
-        TextField(emailPlaceholder, text: $emailText)
-            .focused($focusedField, equals: .email)
-            .keyboardType(.emailAddress)
-            .textContentType(.emailAddress)
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
-            .padding(14)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
     // MARK: - Send Button
 
     private var sendButton: some View {
@@ -173,19 +156,13 @@ struct FeedbackSheet: View {
         focusedField = nil
         isSending = true
 
-        let email = emailText.trimmingCharacters(in: .whitespacesAndNewlines)
-
         do {
-            try await FeedbackService.send(
-                text: feedbackText,
-                email: email.isEmpty ? nil : email
-            )
+            try await FeedbackService.send(text: feedbackText)
             triggerHaptic()
             withAnimation { showSuccess = true }
             saveCooldownTimestamp()
             startCooldownTimer()
             feedbackText = ""
-            emailText = ""
 
             try? await Task.sleep(for: .seconds(2))
             dismiss()

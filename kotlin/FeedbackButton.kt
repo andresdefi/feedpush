@@ -38,7 +38,6 @@ fun FeedbackButton(
     subtitle: String = "Share your ideas with us",
     // Pass all FeedbackSheet customization through here
     feedbackPlaceholder: String = "What's on your mind?",
-    emailPlaceholder: String = "Leave your email if you'd like us to follow up (totally optional)",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."
@@ -96,7 +95,6 @@ fun FeedbackButton(
         FeedbackSheet(
             onDismiss = { showSheet = false },
             feedbackPlaceholder = feedbackPlaceholder,
-            emailPlaceholder = emailPlaceholder,
             sendButtonText = sendButtonText,
             successMessage = successMessage,
             errorMessage = errorMessage

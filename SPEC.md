@@ -21,7 +21,6 @@ Each platform gets its own complete, independent, drop-in implementation.
 3. They tap the button. A **sheet/modal** slides up over the current screen.
 4. The sheet contains:
    - A multi-line text field for their feedback (2000-character limit, live counter)
-   - An optional email field labeled "Leave your email if you'd like us to follow up (totally optional)"
    - A send button
    - A close/dismiss button
 5. They type their feedback and tap "Send".
@@ -39,7 +38,6 @@ Each message is formatted with:
 - **OS version** (read automatically from the device)
 - **Platform** (iOS or Android)
 - **Feedback text** (what the user typed)
-- **Email** (only if provided, otherwise omit this line)
 - **Timestamp** (UTC, when the feedback was sent)
 
 Example messages:
@@ -52,8 +50,6 @@ Example messages:
 
 💬 Feedback:
 The strobe mode flickers too fast. Would love a speed slider.
-
-📧 Email: (not provided)
 ```
 
 ```
@@ -64,8 +60,6 @@ The strobe mode flickers too fast. Would love a speed slider.
 
 💬 Feedback:
 Can you add support for hexagonal tiles?
-
-📧 Email: user@example.com
 ```
 
 ## What NOT to Collect
@@ -197,7 +191,7 @@ Includes a function/property to decode the token at runtime.
 
 ### All Platforms -- FeedbackService
 
-A single function: `sendFeedback(text, email?)` that:
+A single function: `sendFeedback(text)` that:
 1. Reads app version and OS version from the system
 2. Formats the Telegram message string with all fields
 3. POSTs to the Telegram Bot API
@@ -224,9 +218,6 @@ A bottom sheet or modal presented over the current screen:
 - **Multi-line text field** for feedback
   - 2000-character limit
   - Live character counter below (e.g., "142 / 2000")
-- **Single-line text field** for email
-  - Labeled "Leave your email if you'd like us to follow up (totally optional)"
-  - Email keyboard type
 - **Send button**
   - Disabled when: text is empty, text exceeds 2000 chars, send in progress, cooldown active
   - During cooldown: shows "Send (42s)" with countdown
@@ -270,7 +261,7 @@ Build the complete Swift implementation first since the impostor app is availabl
 - [ ] `FeedbackConfig.swift` -- obfuscated token, chat ID, app name
 - [ ] `FeedbackService.swift` -- async/await URLSession POST to Telegram API
 - [ ] `FeedbackButton.swift` -- card-style SwiftUI button
-- [ ] `FeedbackSheet.swift` -- sheet with text field, email field, send button, cooldown, character counter
+- [ ] `FeedbackSheet.swift` -- sheet with text field, send button, cooldown, character counter
 - [ ] Test in impostor app (replace the existing mailto feedback with the new Telegram flow)
 - [ ] `README.md`
 
@@ -278,7 +269,7 @@ Build the complete Swift implementation first since the impostor app is availabl
 - [ ] `FeedbackConfig.kt` -- obfuscated token, chat ID, app name
 - [ ] `FeedbackService.kt` -- HttpURLConnection with coroutines
 - [ ] `FeedbackButton.kt` -- card-style Compose button
-- [ ] `FeedbackSheet.kt` -- bottom sheet with text field, email field, send button, cooldown, character counter
+- [ ] `FeedbackSheet.kt` -- bottom sheet with text field, send button, cooldown, character counter
 - [ ] Test in an Android project
 - [ ] `README.md`
 
@@ -286,7 +277,7 @@ Build the complete Swift implementation first since the impostor app is availabl
 - [ ] `feedback_config.dart` -- obfuscated token, chat ID, app name
 - [ ] `feedback_service.dart` -- http package POST
 - [ ] `feedback_button.dart` -- card-style button widget
-- [ ] `feedback_sheet.dart` -- modal bottom sheet with text field, email field, send button, cooldown, character counter
+- [ ] `feedback_sheet.dart` -- modal bottom sheet with text field, send button, cooldown, character counter
 - [ ] Test in a Flutter project
 - [ ] `README.md`
 
@@ -294,7 +285,7 @@ Build the complete Swift implementation first since the impostor app is availabl
 - [ ] `FeedbackConfig.ts` -- obfuscated token, chat ID, app name
 - [ ] `FeedbackService.ts` -- native fetch POST
 - [ ] `FeedbackButton.tsx` -- card-style pressable component
-- [ ] `FeedbackSheet.tsx` -- modal with text field, email field, send button, cooldown, character counter
+- [ ] `FeedbackSheet.tsx` -- modal with text field, send button, cooldown, character counter
 - [ ] Test in a React Native/Expo project
 - [ ] `README.md`
 

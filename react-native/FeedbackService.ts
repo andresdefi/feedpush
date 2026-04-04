@@ -11,15 +11,14 @@ export type FeedbackResult =
   | { success: false; error: string };
 
 export async function sendFeedback(
-  text: string,
-  email?: string
+  text: string
 ): Promise<FeedbackResult> {
   const trimmed = text.trim();
   if (!trimmed) {
     return { success: false, error: "Feedback text cannot be empty." };
   }
 
-  const message = buildMessage(trimmed, email);
+  const message = buildMessage(trimmed);
 
   let url: string;
   let body: string;
@@ -71,7 +70,7 @@ export async function sendFeedback(
   }
 }
 
-export function buildMessage(text: string, email?: string): string {
+export function buildMessage(text: string): string {
   const appName = FeedbackConfig.appName;
   const appVersion =
     Application.nativeApplicationVersion ?? "Unknown";
@@ -84,11 +83,6 @@ export function buildMessage(text: string, email?: string): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   const timestamp = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;
 
-  const emailValue = email?.trim() ?? "";
-  const emailLine = emailValue
-    ? `\n\u{1F4E7} Email: ${emailValue}`
-    : `\n\u{1F4E7} Email: (not provided)`;
-
   return [
     `\u{1F4F1} App: ${appName}`,
     `\u{1F4E6} Version: ${appVersion}`,
@@ -97,6 +91,5 @@ export function buildMessage(text: string, email?: string): string {
     "",
     `\u{1F4AC} Feedback:`,
     text,
-    emailLine,
   ].join("\n");
 }

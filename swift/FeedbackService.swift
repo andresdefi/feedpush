@@ -30,11 +30,11 @@ enum FeedbackError: LocalizedError {
 enum FeedbackService {
 
     /// Sends feedback using the configured delivery channel.
-    static func send(text: String, email: String? = nil, session: URLSession = .shared) async throws {
+    static func send(text: String, session: URLSession = .shared) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }
 
-        let message = buildMessage(text: trimmed, email: email)
+        let message = buildMessage(text: trimmed)
 
         let request: URLRequest
         switch FeedbackConfig.channel {
@@ -118,7 +118,7 @@ enum FeedbackService {
 
     // MARK: - Message Formatting
 
-    static func buildMessage(text: String, email: String?) -> String {
+    static func buildMessage(text: String) -> String {
         let appName = FeedbackConfig.appName
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
@@ -136,7 +136,7 @@ enum FeedbackService {
         formatter.timeZone = TimeZone(identifier: "UTC")
         let timestamp = formatter.string(from: Date())
 
-        var lines = [
+        let lines = [
             "\u{1F4F1} App: \(appName)",
             "\u{1F4E6} Version: \(appVersion)",
             "\(platformEmoji) Platform: \(platform)",
@@ -145,13 +145,6 @@ enum FeedbackService {
             "\u{1F4AC} Feedback:",
             text
         ]
-
-        let emailValue = email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if emailValue.isEmpty {
-            lines.append("\n\u{1F4E7} Email: (not provided)")
-        } else {
-            lines.append("\n\u{1F4E7} Email: \(emailValue)")
-        }
 
         return lines.joined(separator: "\n")
     }

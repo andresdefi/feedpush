@@ -21,7 +21,6 @@ class FeedbackResult {
 class FeedbackService {
   static Future<FeedbackResult> send({
     required String text,
-    String? email,
     http.Client? client,
   }) async {
     final trimmed = text.trim();
@@ -29,7 +28,7 @@ class FeedbackService {
       return const FeedbackResult.failure('Feedback text cannot be empty.');
     }
 
-    final message = await buildMessage(text: trimmed, email: email);
+    final message = await buildMessage(text: trimmed);
 
     final Uri url;
     final String body;
@@ -79,7 +78,6 @@ class FeedbackService {
 
   static Future<String> buildMessage({
     required String text,
-    String? email,
   }) async {
     final appName = FeedbackConfig.appName;
 
@@ -100,18 +98,12 @@ class FeedbackService {
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-    final emailValue = email?.trim() ?? '';
-    final emailLine = emailValue.isEmpty
-        ? '\n\u{1F4E7} Email: (not provided)'
-        : '\n\u{1F4E7} Email: $emailValue';
-
     return '\u{1F4F1} App: $appName\n'
         '\u{1F4E6} Version: $appVersion\n'
         '$platformEmoji Platform: $platformName $osVersion\n'
         '\u{1F554} Time: $timestamp UTC\n'
         '\n'
         '\u{1F4AC} Feedback:\n'
-        '$text'
-        '$emailLine';
+        '$text';
   }
 }

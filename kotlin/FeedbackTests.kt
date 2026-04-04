@@ -1,7 +1,6 @@
 package com.feedpush
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -46,118 +45,84 @@ class FeedbackServiceMessageTests {
 
     @Test
     fun `message contains app name`() {
-        val message = FeedbackService.buildMessage(null, "Great app!", null)
+        val message = FeedbackService.buildMessage(null, "Great app!")
         assertTrue(message.contains("App: ${FeedbackConfig.appName}"))
     }
 
     @Test
     fun `message contains feedback text`() {
         val feedbackText = "This is my feedback about the app"
-        val message = FeedbackService.buildMessage(null, feedbackText, null)
+        val message = FeedbackService.buildMessage(null, feedbackText)
         assertTrue(message.contains(feedbackText))
     }
 
     @Test
     fun `message contains feedback header`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
+        val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Feedback:"))
     }
 
     @Test
     fun `message contains version line`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
+        val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Version:"))
     }
 
     @Test
     fun `message contains platform line`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
+        val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Platform:"))
         assertTrue(message.contains("Android"))
     }
 
     @Test
     fun `message contains timestamp`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
+        val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Time:"))
         assertTrue(message.contains("UTC"))
     }
 
     @Test
-    fun `message with no email shows not provided`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
-        assertTrue(message.contains("Email: (not provided)"))
-    }
-
-    @Test
-    fun `message with empty email shows not provided`() {
-        val message = FeedbackService.buildMessage(null, "Test", "")
-        assertTrue(message.contains("Email: (not provided)"))
-    }
-
-    @Test
-    fun `message with whitespace only email shows not provided`() {
-        val message = FeedbackService.buildMessage(null, "Test", "   ")
-        assertTrue(message.contains("Email: (not provided)"))
-    }
-
-    @Test
-    fun `message with email shows email`() {
-        val email = "user@example.com"
-        val message = FeedbackService.buildMessage(null, "Test", email)
-        assertTrue(message.contains("Email: $email"))
-        assertFalse(message.contains("(not provided)"))
-    }
-
-    @Test
-    fun `message with email with whitespace trims it`() {
-        val message = FeedbackService.buildMessage(null, "Test", "  user@example.com  ")
-        assertTrue(message.contains("Email: user@example.com"))
-    }
-
-    @Test
     fun `message order is correct`() {
-        val message = FeedbackService.buildMessage(null, "My feedback", "a@b.com")
+        val message = FeedbackService.buildMessage(null, "My feedback")
 
         val appIndex = message.indexOf("App:")
         val versionIndex = message.indexOf("Version:")
         val platformIndex = message.indexOf("Platform:")
         val timeIndex = message.indexOf("Time:")
         val feedbackIndex = message.indexOf("Feedback:")
-        val emailIndex = message.indexOf("Email:")
 
         assertTrue(appIndex < versionIndex)
         assertTrue(versionIndex < platformIndex)
         assertTrue(platformIndex < timeIndex)
         assertTrue(timeIndex < feedbackIndex)
-        assertTrue(feedbackIndex < emailIndex)
     }
 
     @Test
     fun `message with special characters in feedback`() {
         val text = "Feedback with special chars: <>&\"' and emojis \uD83D\uDE00\uD83D\uDD25"
-        val message = FeedbackService.buildMessage(null, text, null)
+        val message = FeedbackService.buildMessage(null, text)
         assertTrue(message.contains(text))
     }
 
     @Test
     fun `message with multiline feedback`() {
         val text = "Line 1\nLine 2\nLine 3"
-        val message = FeedbackService.buildMessage(null, text, null)
+        val message = FeedbackService.buildMessage(null, text)
         assertTrue(message.contains(text))
     }
 
     @Test
     fun `message with max length feedback stays under telegram limit`() {
         val text = "a".repeat(2000)
-        val message = FeedbackService.buildMessage(null, text, null)
+        val message = FeedbackService.buildMessage(null, text)
         assertTrue(message.contains(text))
         assertTrue(message.length <= 4096)
     }
 
     @Test
     fun `message with null context shows unknown version`() {
-        val message = FeedbackService.buildMessage(null, "Test", null)
+        val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Version: Unknown"))
     }
 }

@@ -96,7 +96,7 @@ FeedbackButton(
 ## How it works
 
 1. User taps the feedback button
-2. A modal bottom sheet slides up with a text field and optional email field
+2. A modal bottom sheet slides up with a text field
 3. User types their feedback and taps Send
 4. The app POSTs the message to the Telegram Bot API
 5. You receive it as a push notification in Telegram

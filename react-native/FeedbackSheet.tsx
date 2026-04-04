@@ -18,7 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendFeedback } from "./FeedbackService";
 
 // FeedbackSheet
-// A modal with a feedback text field, optional email field,
+// A modal with a feedback text field,
 // send button with cooldown, and character counter.
 
 const MAX_CHARACTERS = 2000;
@@ -29,7 +29,6 @@ interface FeedbackSheetProps {
   visible: boolean;
   onDismiss: () => void;
   feedbackPlaceholder?: string;
-  emailPlaceholder?: string;
   sendButtonText?: string;
   successMessage?: string;
   errorMessage?: string;
@@ -39,7 +38,6 @@ export function FeedbackSheet({
   visible,
   onDismiss,
   feedbackPlaceholder = "What's on your mind?",
-  emailPlaceholder = "Leave your email if you'd like us to follow up (totally optional)",
   sendButtonText = "Send",
   successMessage = "Thank you for your feedback!",
   errorMessage = "Could not send feedback. Please check your connection and try again.",
@@ -48,7 +46,6 @@ export function FeedbackSheet({
   const isDark = colorScheme === "dark";
 
   const [feedbackText, setFeedbackText] = useState("");
-  const [emailText, setEmailText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -100,8 +97,7 @@ export function FeedbackSheet({
     setIsSending(true);
     setShowError(false);
 
-    const email = emailText.trim() || undefined;
-    const result = await sendFeedback(feedbackText, email);
+    const result = await sendFeedback(feedbackText);
 
     if (result.success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -113,7 +109,6 @@ export function FeedbackSheet({
       startCooldownTimer(COOLDOWN_DURATION);
 
       setFeedbackText("");
-      setEmailText("");
 
       setTimeout(() => {
         setShowSuccess(false);
@@ -124,7 +119,7 @@ export function FeedbackSheet({
     }
 
     setIsSending(false);
-  }, [feedbackText, emailText, onDismiss, startCooldownTimer]);
+  }, [feedbackText, onDismiss, startCooldownTimer]);
 
   const handleDismiss = useCallback(() => {
     setShowSuccess(false);
@@ -193,24 +188,6 @@ export function FeedbackSheet({
           >
             {feedbackText.length} / {MAX_CHARACTERS}
           </Text>
-
-          {/* Email field */}
-          <TextInput
-            style={[
-              styles.emailInput,
-              {
-                backgroundColor: inputBg,
-                color: textColor,
-              },
-            ]}
-            placeholder={emailPlaceholder}
-            placeholderTextColor={dimColor}
-            value={emailText}
-            onChangeText={setEmailText}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
 
           {/* Send button */}
           <Pressable
@@ -292,12 +269,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "right",
     marginTop: 4,
-    marginBottom: 16,
-  },
-  emailInput: {
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 14,
     marginBottom: 24,
   },
   sendButton: {

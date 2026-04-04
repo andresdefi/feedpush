@@ -12,7 +12,6 @@ class FeedbackButton extends StatelessWidget {
   final String subtitle;
   // Pass-through to FeedbackSheet
   final String feedbackPlaceholder;
-  final String emailPlaceholder;
   final String sendButtonText;
   final String successMessage;
   final String errorMessage;
@@ -23,8 +22,6 @@ class FeedbackButton extends StatelessWidget {
     this.title = 'Have suggestions?',
     this.subtitle = 'Share your ideas with us',
     this.feedbackPlaceholder = "What's on your mind?",
-    this.emailPlaceholder =
-        "Leave your email if you'd like us to follow up (totally optional)",
     this.sendButtonText = 'Send',
     this.successMessage = 'Thank you for your feedback!',
     this.errorMessage =
@@ -91,7 +88,6 @@ class FeedbackButton extends StatelessWidget {
       ),
       builder: (_) => FeedbackSheet(
         feedbackPlaceholder: feedbackPlaceholder,
-        emailPlaceholder: emailPlaceholder,
         sendButtonText: sendButtonText,
         successMessage: successMessage,
         errorMessage: errorMessage,

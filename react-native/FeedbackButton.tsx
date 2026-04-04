@@ -18,7 +18,6 @@ interface FeedbackButtonProps {
   subtitle?: string;
   // Pass-through to FeedbackSheet
   feedbackPlaceholder?: string;
-  emailPlaceholder?: string;
   sendButtonText?: string;
   successMessage?: string;
   errorMessage?: string;
@@ -29,7 +28,6 @@ export function FeedbackButton({
   title = "Have suggestions?",
   subtitle = "Share your ideas with us",
   feedbackPlaceholder,
-  emailPlaceholder,
   sendButtonText,
   successMessage,
   errorMessage,
@@ -83,7 +81,6 @@ export function FeedbackButton({
         visible={showSheet}
         onDismiss={() => setShowSheet(false)}
         feedbackPlaceholder={feedbackPlaceholder}
-        emailPlaceholder={emailPlaceholder}
         sendButtonText={sendButtonText}
         successMessage={successMessage}
         errorMessage={errorMessage}
