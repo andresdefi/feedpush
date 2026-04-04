@@ -1,7 +1,7 @@
 // FeedbackChannel
 // The delivery channel for feedback messages.
 
-export type FeedbackChannel = "telegram" | "discord" | "slack";
+export type FeedbackChannel = "telegram" | "discord" | "slack" | "proxy";
 
 // FeedbackConfig
 // Holds the delivery channel, credentials, and app name.
@@ -23,6 +23,12 @@ export type FeedbackChannel = "telegram" | "discord" | "slack";
 // 2. Enable Incoming Webhooks and create one for your channel
 // 3. Generate the obfuscated URL char codes using the same command with your webhook URL
 // 4. Paste the array into `webhookURLCodes`
+//
+// PROXY SETUP (recommended - most secure option):
+// 1. Deploy the proxy worker from proxy/README.md
+// 2. Set `proxyURL` to your deployed worker URL
+// 3. The proxy handles message formatting and credential storage,
+//    so no tokens or webhook URLs are needed in the app binary
 
 // MARK: Telegram Configuration
 
@@ -48,6 +54,9 @@ export const FeedbackConfig = {
 
   // The name of your app (shown in the feedback message)
   appName: "My App",
+
+  // Proxy URL (only needed for "proxy")
+  proxyURL: "https://your-proxy.workers.dev/feedback",
 
   // Decoded values
   get botToken(): string {

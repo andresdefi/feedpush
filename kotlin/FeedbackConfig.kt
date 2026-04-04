@@ -6,7 +6,8 @@ package com.feedpush
 enum class FeedbackChannel {
     TELEGRAM,
     DISCORD,
-    SLACK
+    SLACK,
+    PROXY
 }
 
 // MARK: FeedbackConfig
@@ -29,6 +30,12 @@ enum class FeedbackChannel {
 // 2. Enable Incoming Webhooks and create one for your channel
 // 3. Generate the obfuscated URL bytes using the same command with your webhook URL
 // 4. Paste the byte array into `webhookURLBytes`
+//
+// PROXY SETUP (recommended - most secure option):
+// 1. Deploy the proxy worker from proxy/README.md
+// 2. Set `proxyURL` to your deployed worker URL
+// 3. The proxy handles message formatting and credential storage,
+//    so no tokens or webhook URLs are needed in the app binary
 
 object FeedbackConfig {
 
@@ -52,6 +59,11 @@ object FeedbackConfig {
     private val webhookURLBytes: ByteArray = byteArrayOf(
         // Paste your obfuscated webhook URL bytes here
     )
+
+    // MARK: Proxy Configuration
+
+    // URL of the proxy worker (only needed for PROXY)
+    const val proxyURL: String = "https://your-proxy.workers.dev/feedback"
 
     // MARK: App Info
 

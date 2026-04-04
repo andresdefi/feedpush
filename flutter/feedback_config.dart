@@ -1,7 +1,7 @@
 // FeedbackChannel
 // The delivery channel for feedback messages.
 
-enum FeedbackChannel { telegram, discord, slack }
+enum FeedbackChannel { telegram, discord, slack, proxy }
 
 // FeedbackConfig
 // Holds the delivery channel, credentials, and app name.
@@ -25,6 +25,12 @@ enum FeedbackChannel { telegram, discord, slack }
 // 3. Generate the obfuscated URL char codes:
 //    print('YOUR_WEBHOOK_URL'.codeUnits);
 // 4. Paste the list into `_webhookURLCodes`
+//
+// PROXY SETUP (recommended - most secure option):
+// 1. Deploy the proxy worker from proxy/README.md
+// 2. Set `proxyURL` to your deployed worker URL
+// 3. The proxy handles message formatting and credential storage,
+//    so no tokens or webhook URLs are needed in the app binary
 
 class FeedbackConfig {
   // Which channel to use for sending feedback
@@ -47,6 +53,11 @@ class FeedbackConfig {
   static const List<int> _webhookURLCodes = [
     // Paste your obfuscated webhook URL char codes here
   ];
+
+  // MARK: Proxy Configuration
+
+  // URL of the proxy worker (only needed for proxy)
+  static const String proxyURL = 'https://your-proxy.workers.dev/feedback';
 
   // MARK: App Info
 

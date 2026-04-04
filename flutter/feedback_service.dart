@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'feedback_config.dart';
 
 // FeedbackService
-// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
+// Sends feedback via Telegram, Discord, Slack, or Proxy depending on FeedbackConfig.channel.
 // Uses the `http` package -- the only external dependency.
 
 class FeedbackResult {
@@ -28,13 +28,12 @@ class FeedbackService {
       return const FeedbackResult.failure('Feedback text cannot be empty.');
     }
 
-    final message = await buildMessage(text: trimmed);
-
     final Uri url;
     final String body;
 
     switch (FeedbackConfig.channel) {
       case FeedbackChannel.telegram:
+        final message = await buildMessage(text: trimmed);
         final token = FeedbackConfig.botToken;
         url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
         body = jsonEncode({
@@ -44,12 +43,26 @@ class FeedbackService {
         });
         break;
       case FeedbackChannel.discord:
+        final message = await buildMessage(text: trimmed);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'content': message});
         break;
       case FeedbackChannel.slack:
+        final message = await buildMessage(text: trimmed);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'text': message});
+        break;
+      case FeedbackChannel.proxy:
+        url = Uri.parse(FeedbackConfig.proxyURL);
+        final packageInfo = await PackageInfo.fromPlatform();
+        final platformName = Platform.isIOS ? 'iOS' : 'Android';
+        final osVersion = Platform.operatingSystemVersion;
+        body = jsonEncode({
+          'app_name': FeedbackConfig.appName,
+          'app_version': packageInfo.version,
+          'platform': '$platformName $osVersion',
+          'feedback': trimmed,
+        });
         break;
     }
 

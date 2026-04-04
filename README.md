@@ -1,6 +1,8 @@
 # FeedPush
 
-Drop-in feedback module for mobile apps. Users tap a button, type their feedback, and you receive it instantly on your phone. No backend, no database, no user accounts.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Drop-in feedback module for mobile apps. Users tap a button, type their feedback, and you receive it instantly on your phone. No database, no user accounts.
 
 ## Supported Platforms
 
@@ -15,9 +17,23 @@ Each platform is a standalone, independent implementation. Pick the one that mat
 
 ## Delivery Channels
 
-FeedPush supports three delivery channels. Pick the one that works best for you:
+FeedPush supports four delivery options. Pick the one that works best for you:
 
-### Discord Webhook (Recommended)
+### Proxy (Recommended - Most Secure)
+
+Deploy a small Cloudflare Worker that holds your credentials server-side. The app only knows the proxy URL -- no tokens or webhook URLs in the binary at all.
+
+| | |
+|---|---|
+| **Cost** | Free (Cloudflare Workers free tier: 100k requests/day) |
+| **Setup** | Deploy the worker from `proxy/`, set secrets via CLI |
+| **Push notifications** | Yes, via whichever channel the proxy forwards to |
+| **If the proxy URL leaks** | Attacker can send feedback messages. That's it -- no credentials are exposed. Server-side rate limiting prevents spam. |
+| **Credentials in app** | None. Zero secrets in the binary. |
+
+See [proxy/README.md](./proxy/README.md) for setup instructions.
+
+### Discord Webhook
 
 The most secure option. A webhook URL can only post messages to one specific channel - nothing else.
 
@@ -60,9 +76,11 @@ The simplest to set up, but the token grants more access than needed for this us
 
 ### Which should I use?
 
-**Discord** or **Slack** if security matters to you. They're strictly write-only - even with the credential, an attacker can only post to one channel.
+**Proxy** if you want maximum security. No secrets in the app, server-side rate limiting, and you can switch channels without an app update.
 
-**Telegram** if you want the simplest setup and already use Telegram. The risk is manageable for personal/small apps - worst case is spam in your chat, and you can revoke the token in 30 seconds.
+**Discord** or **Slack** if you want simplicity without a proxy. They're write-only -- even with the credential, an attacker can only post to one channel.
+
+**Telegram** if you want the simplest setup and already use Telegram. The risk is manageable for personal/small apps.
 
 ## How It Works
 

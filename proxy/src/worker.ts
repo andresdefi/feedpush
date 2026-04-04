@@ -20,9 +20,9 @@ interface FeedbackPayload {
 }
 
 // Simple in-memory rate limiter (resets on worker restart, which is fine)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+export const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function isRateLimited(ip: string, maxPerMinute: number): boolean {
+export function isRateLimited(ip: string, maxPerMinute: number): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 
@@ -35,7 +35,7 @@ function isRateLimited(ip: string, maxPerMinute: number): boolean {
   return entry.count > maxPerMinute;
 }
 
-function formatMessage(payload: FeedbackPayload): string {
+export function formatMessage(payload: FeedbackPayload): string {
   const now = new Date();
   const pad = (n: number) => n.toString().padStart(2, "0");
   const timestamp = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;

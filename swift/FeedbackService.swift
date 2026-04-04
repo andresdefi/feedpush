@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 // MARK: - FeedbackService
-// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
+// Sends feedback via Telegram, Discord, Slack, or Proxy depending on FeedbackConfig.channel.
 // Uses native URLSession with async/await -- no third-party dependencies.
 
 enum FeedbackError: LocalizedError {
@@ -34,16 +34,22 @@ enum FeedbackService {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }
 
-        let message = buildMessage(text: trimmed)
-
         let request: URLRequest
         switch FeedbackConfig.channel {
-        case .telegram:
-            request = try buildTelegramRequest(message: message)
-        case .discord:
-            request = try buildDiscordRequest(message: message)
-        case .slack:
-            request = try buildSlackRequest(message: message)
+        case .proxy:
+            request = try buildProxyRequest(text: trimmed)
+        default:
+            let message = buildMessage(text: trimmed)
+            switch FeedbackConfig.channel {
+            case .telegram:
+                request = try buildTelegramRequest(message: message)
+            case .discord:
+                request = try buildDiscordRequest(message: message)
+            case .slack:
+                request = try buildSlackRequest(message: message)
+            case .proxy:
+                fatalError("Unreachable")
+            }
         }
 
         let (data, response): (Data, URLResponse)
@@ -112,6 +118,33 @@ enum FeedbackService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = ["text": message]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    private static func buildProxyRequest(text: String) throws -> URLRequest {
+        guard let url = URL(string: FeedbackConfig.proxyURL) else {
+            throw FeedbackError.invalidURL
+        }
+
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+
+        #if os(iOS)
+        let platform = "iOS \(UIDevice.current.systemVersion)"
+        #else
+        let platform = ProcessInfo.processInfo.operatingSystemVersionString
+        #endif
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "app_name": FeedbackConfig.appName,
+            "app_version": appVersion,
+            "platform": platform,
+            "feedback": text
+        ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return request
     }

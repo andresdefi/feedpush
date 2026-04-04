@@ -7,6 +7,7 @@ enum FeedbackChannel {
     case telegram
     case discord
     case slack
+    case proxy
 }
 
 // MARK: - FeedbackConfig
@@ -31,6 +32,12 @@ enum FeedbackChannel {
 // 3. Generate the obfuscated URL bytes:
 //    swift -e 'let t = "YOUR_WEBHOOK_URL"; print(Array(t.utf8))'
 // 4. Paste the byte array into `webhookURLBytes`
+//
+// PROXY SETUP (recommended - most secure option):
+// 1. Deploy the proxy worker from proxy/README.md
+// 2. Set `proxyURL` to your deployed worker URL
+// 3. The proxy handles message formatting and credential storage,
+//    so no tokens or webhook URLs are needed in the app binary
 
 struct FeedbackConfig {
 
@@ -54,6 +61,11 @@ struct FeedbackConfig {
     static let webhookURLBytes: [UInt8] = [
         // Paste your obfuscated webhook URL bytes here
     ]
+
+    // MARK: - Proxy Configuration
+
+    // URL of the proxy worker (only needed for .proxy)
+    static let proxyURL = "https://your-proxy.workers.dev/feedback"
 
     // MARK: - App Info
 

@@ -3,7 +3,7 @@ import * as Application from "expo-application";
 import { FeedbackConfig } from "./FeedbackConfig";
 
 // FeedbackService
-// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
+// Sends feedback via Telegram, Discord, Slack, or Proxy depending on FeedbackConfig.channel.
 // Uses native `fetch` -- no third-party networking dependencies.
 
 export type FeedbackResult =
@@ -18,13 +18,12 @@ export async function sendFeedback(
     return { success: false, error: "Feedback text cannot be empty." };
   }
 
-  const message = buildMessage(trimmed);
-
   let url: string;
   let body: string;
 
   switch (FeedbackConfig.channel) {
     case "telegram": {
+      const message = buildMessage(trimmed);
       const token = FeedbackConfig.botToken;
       url = `https://api.telegram.org/bot${token}/sendMessage`;
       body = JSON.stringify({
@@ -35,13 +34,30 @@ export async function sendFeedback(
       break;
     }
     case "discord": {
+      const message = buildMessage(trimmed);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ content: message });
       break;
     }
     case "slack": {
+      const message = buildMessage(trimmed);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ text: message });
+      break;
+    }
+    case "proxy": {
+      const appVersion =
+        Application.nativeApplicationVersion ?? "Unknown";
+      const platformName = Platform.OS === "ios" ? "iOS" : "Android";
+      const osVersion = Platform.Version;
+
+      url = FeedbackConfig.proxyURL;
+      body = JSON.stringify({
+        app_name: FeedbackConfig.appName,
+        app_version: appVersion,
+        platform: `${platformName} ${osVersion}`,
+        feedback: trimmed,
+      });
       break;
     }
   }

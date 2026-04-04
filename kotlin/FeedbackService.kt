@@ -15,7 +15,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 // MARK: FeedbackService
-// Sends feedback via Telegram, Discord, or Slack depending on FeedbackConfig.channel.
+// Sends feedback via Telegram, Discord, Slack, or Proxy depending on FeedbackConfig.channel.
 // Uses native HttpURLConnection with coroutines -- no third-party dependencies.
 
 sealed class FeedbackResult {
@@ -37,6 +37,7 @@ object FeedbackService {
                     FeedbackChannel.TELEGRAM -> buildTelegramPayload(message)
                     FeedbackChannel.DISCORD -> buildDiscordPayload(message)
                     FeedbackChannel.SLACK -> buildSlackPayload(message)
+                    FeedbackChannel.PROXY -> buildProxyPayload(context, trimmed)
                 }
 
                 val connection = url.openConnection() as HttpURLConnection
@@ -92,6 +93,26 @@ object FeedbackService {
         val url = URL(FeedbackConfig.webhookURL())
         val body = JSONObject().apply {
             put("text", message)
+        }
+        return url to body
+    }
+
+    private fun buildProxyPayload(context: Context?, text: String): Pair<URL, JSONObject> {
+        val url = URL(FeedbackConfig.proxyURL)
+
+        val appVersion = try {
+            context?.packageManager?.getPackageInfo(context.packageName, 0)?.versionName ?: "Unknown"
+        } catch (_: Exception) {
+            "Unknown"
+        }
+
+        val platform = "Android ${Build.VERSION.RELEASE}"
+
+        val body = JSONObject().apply {
+            put("app_name", FeedbackConfig.appName)
+            put("app_version", appVersion)
+            put("platform", platform)
+            put("feedback", text)
         }
         return url to body
     }
