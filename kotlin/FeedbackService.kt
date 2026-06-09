@@ -25,11 +25,11 @@ sealed class FeedbackResult {
 
 object FeedbackService {
 
-    suspend fun send(context: Context, text: String): FeedbackResult {
+    suspend fun send(context: Context, text: String, category: String? = null): FeedbackResult {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return FeedbackResult.Error("Feedback text cannot be empty.")
 
-        val message = buildMessage(context, trimmed)
+        val message = buildMessage(context, trimmed, category)
 
         return withContext(Dispatchers.IO) {
             try {
@@ -37,7 +37,7 @@ object FeedbackService {
                     FeedbackChannel.TELEGRAM -> buildTelegramPayload(message)
                     FeedbackChannel.DISCORD -> buildDiscordPayload(message)
                     FeedbackChannel.SLACK -> buildSlackPayload(message)
-                    FeedbackChannel.PROXY -> buildProxyPayload(context, trimmed)
+                    FeedbackChannel.PROXY -> buildProxyPayload(context, trimmed, category)
                 }
 
                 val connection = url.openConnection() as HttpURLConnection
@@ -97,7 +97,7 @@ object FeedbackService {
         return url to body
     }
 
-    private fun buildProxyPayload(context: Context?, text: String): Pair<URL, JSONObject> {
+    private fun buildProxyPayload(context: Context?, text: String, category: String?): Pair<URL, JSONObject> {
         val url = URL(FeedbackConfig.proxyURL)
 
         val appVersion = try {
@@ -113,13 +113,14 @@ object FeedbackService {
             put("app_version", appVersion)
             put("platform", platform)
             put("feedback", text)
+            if (!category.isNullOrBlank()) put("category", category)
         }
         return url to body
     }
 
     // MARK: Message Formatting
 
-    internal fun buildMessage(context: Context?, text: String): String {
+    internal fun buildMessage(context: Context?, text: String, category: String? = null): String {
         val appName = FeedbackConfig.appName
 
         val appVersion = try {
@@ -139,6 +140,9 @@ object FeedbackService {
             appendLine("\uD83D\uDCE6 Version: $appVersion")
             appendLine("\uD83E\uDD16 Platform: $platform")
             appendLine("\uD83D\uDD54 Time: $timestamp UTC")
+            if (!category.isNullOrBlank()) {
+                appendLine("\uD83C\uDFF7\uFE0F Type: $category")
+            }
             appendLine()
             appendLine("\uD83D\uDCAC Feedback:")
             append(text)

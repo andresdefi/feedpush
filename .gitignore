@@ -33,3 +33,7 @@ node_modules/
 # Environment
 .env
 .env.*
+
+# Private credentials (contain the real deployed proxy URL)
+PROXY_URL.md
+DEPLOYED.md

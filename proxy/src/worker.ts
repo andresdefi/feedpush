@@ -17,6 +17,7 @@ interface FeedbackPayload {
   app_version: string;
   platform: string;
   feedback: string;
+  category?: string; // Optional topic (e.g. "Feature", "Bug", "Feedback")
 }
 
 // Simple in-memory rate limiter (resets on worker restart, which is fine)
@@ -40,15 +41,22 @@ export function formatMessage(payload: FeedbackPayload): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   const timestamp = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;
 
-  return [
+  const lines = [
     `\u{1F4F1} App: ${payload.app_name}`,
     `\u{1F4E6} Version: ${payload.app_version}`,
     `\u{1F4F2} Platform: ${payload.platform}`,
     `\u{1F554} Time: ${timestamp} UTC`,
-    "",
-    `\u{1F4AC} Feedback:`,
-    payload.feedback,
-  ].join("\n");
+  ];
+
+  // Optional topic line (omitted for older app versions that don't send one)
+  const category = payload.category?.trim();
+  if (category) {
+    lines.push(`\u{1F3F7}\u{FE0F} Type: ${category}`);
+  }
+
+  lines.push("", `\u{1F4AC} Feedback:`, payload.feedback);
+
+  return lines.join("\n");
 }
 
 async function sendToTelegram(message: string, env: Env): Promise<Response> {
@@ -122,6 +130,13 @@ export default {
     if (payload.feedback.length > 2000) {
       return Response.json(
         { ok: false, error: "Feedback text exceeds 2000 characters" },
+        { status: 400 }
+      );
+    }
+
+    if (payload.category && payload.category.length > 50) {
+      return Response.json(
+        { ok: false, error: "Category exceeds 50 characters" },
         { status: 400 }
       );
     }

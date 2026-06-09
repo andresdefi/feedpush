@@ -30,16 +30,17 @@ enum FeedbackError: LocalizedError {
 enum FeedbackService {
 
     /// Sends feedback using the configured delivery channel.
-    static func send(text: String, session: URLSession = .shared) async throws {
+    /// - Parameter category: optional topic (e.g. "Bug"). Pass `nil` to omit.
+    static func send(text: String, category: String? = nil, session: URLSession = .shared) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }
 
         let request: URLRequest
         switch FeedbackConfig.channel {
         case .proxy:
-            request = try buildProxyRequest(text: trimmed)
+            request = try buildProxyRequest(text: trimmed, category: category)
         default:
-            let message = buildMessage(text: trimmed)
+            let message = buildMessage(text: trimmed, category: category)
             switch FeedbackConfig.channel {
             case .telegram:
                 request = try buildTelegramRequest(message: message)
@@ -122,7 +123,7 @@ enum FeedbackService {
         return request
     }
 
-    private static func buildProxyRequest(text: String) throws -> URLRequest {
+    private static func buildProxyRequest(text: String, category: String?) throws -> URLRequest {
         guard let url = URL(string: FeedbackConfig.proxyURL) else {
             throw FeedbackError.invalidURL
         }
@@ -139,19 +140,22 @@ enum FeedbackService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "app_name": FeedbackConfig.appName,
             "app_version": appVersion,
             "platform": platform,
             "feedback": text
         ]
+        if let category, !category.trimmingCharacters(in: .whitespaces).isEmpty {
+            body["category"] = category
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return request
     }
 
     // MARK: - Message Formatting
 
-    static func buildMessage(text: String) -> String {
+    static func buildMessage(text: String, category: String? = nil) -> String {
         let appName = FeedbackConfig.appName
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
@@ -169,15 +173,22 @@ enum FeedbackService {
         formatter.timeZone = TimeZone(identifier: "UTC")
         let timestamp = formatter.string(from: Date())
 
-        let lines = [
+        var lines = [
             "\u{1F4F1} App: \(appName)",
             "\u{1F4E6} Version: \(appVersion)",
             "\(platformEmoji) Platform: \(platform)",
-            "\u{1F554} Time: \(timestamp) UTC",
+            "\u{1F554} Time: \(timestamp) UTC"
+        ]
+
+        if let category, !category.trimmingCharacters(in: .whitespaces).isEmpty {
+            lines.append("\u{1F3F7}\u{FE0F} Type: \(category)")
+        }
+
+        lines.append(contentsOf: [
             "",
             "\u{1F4AC} Feedback:",
             text
-        ]
+        ])
 
         return lines.joined(separator: "\n")
     }

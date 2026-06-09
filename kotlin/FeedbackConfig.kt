@@ -70,6 +70,13 @@ object FeedbackConfig {
     // The name of your app (shown in the feedback message)
     const val appName: String = "My App"
 
+    // MARK: Topics
+
+    // Optional feedback topics. When non-empty, the sheet shows a segmented
+    // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+    // Leave empty (emptyList()) for the classic single-field sheet with no picker.
+    val categories: List<String> = listOf("Feature", "Bug", "Feedback")
+
     // MARK: Decoded Values
 
     fun botToken(): String = String(tokenBytes, Charsets.UTF_8)

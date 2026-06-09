@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'feedback_config.dart';
 import 'feedback_service.dart';
 
 // FeedbackSheet
@@ -37,6 +38,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   final _feedbackController = TextEditingController();
   final _feedbackFocus = FocusNode();
 
+  int _selectedCategoryIndex = 0;
   bool _isSending = false;
   bool _showSuccess = false;
   bool _showError = false;
@@ -104,8 +106,13 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       _showError = false;
     });
 
+    final categories = FeedbackConfig.categories;
+    final category =
+        categories.isEmpty ? null : categories[_selectedCategoryIndex];
+
     final result = await FeedbackService.send(
       text: _feedbackController.text,
+      category: category,
     );
 
     if (!mounted) return;
@@ -163,6 +170,30 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // Topic picker (only when categories are configured)
+                if (FeedbackConfig.categories.isNotEmpty) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<int>(
+                      segments: [
+                        for (var i = 0;
+                            i < FeedbackConfig.categories.length;
+                            i++)
+                          ButtonSegment<int>(
+                            value: i,
+                            label: Text(FeedbackConfig.categories[i]),
+                          ),
+                      ],
+                      selected: {_selectedCategoryIndex},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (selection) {
+                        setState(() => _selectedCategoryIndex = selection.first);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Feedback text field
                 TextField(

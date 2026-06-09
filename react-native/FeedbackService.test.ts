@@ -116,6 +116,30 @@ describe("buildMessage", () => {
     expect(message).toContain(text);
     expect(message.length).toBeLessThanOrEqual(4096);
   });
+
+  test("message contains type line when category provided", () => {
+    const message = buildMessage("Test", "Bug");
+    expect(message).toContain("Type: Bug");
+  });
+
+  test("type line sits between time and feedback", () => {
+    const message = buildMessage("Test", "Feature");
+    const timeIndex = message.indexOf("Time:");
+    const typeIndex = message.indexOf("Type:");
+    const feedbackIndex = message.indexOf("Feedback:");
+    expect(timeIndex).toBeLessThan(typeIndex);
+    expect(typeIndex).toBeLessThan(feedbackIndex);
+  });
+
+  test("message omits type line when category absent", () => {
+    const message = buildMessage("Test");
+    expect(message).not.toContain("Type:");
+  });
+
+  test("message omits type line when category blank", () => {
+    const message = buildMessage("Test", "   ");
+    expect(message).not.toContain("Type:");
+  });
 });
 
 // MARK: Input Validation Tests

@@ -11,7 +11,8 @@ export type FeedbackResult =
   | { success: false; error: string };
 
 export async function sendFeedback(
-  text: string
+  text: string,
+  category?: string
 ): Promise<FeedbackResult> {
   const trimmed = text.trim();
   if (!trimmed) {
@@ -23,7 +24,7 @@ export async function sendFeedback(
 
   switch (FeedbackConfig.channel) {
     case "telegram": {
-      const message = buildMessage(trimmed);
+      const message = buildMessage(trimmed, category);
       const token = FeedbackConfig.botToken;
       url = `https://api.telegram.org/bot${token}/sendMessage`;
       body = JSON.stringify({
@@ -34,13 +35,13 @@ export async function sendFeedback(
       break;
     }
     case "discord": {
-      const message = buildMessage(trimmed);
+      const message = buildMessage(trimmed, category);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ content: message });
       break;
     }
     case "slack": {
-      const message = buildMessage(trimmed);
+      const message = buildMessage(trimmed, category);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ text: message });
       break;
@@ -57,6 +58,7 @@ export async function sendFeedback(
         app_version: appVersion,
         platform: `${platformName} ${osVersion}`,
         feedback: trimmed,
+        ...(category && category.trim() ? { category } : {}),
       });
       break;
     }
@@ -86,7 +88,7 @@ export async function sendFeedback(
   }
 }
 
-export function buildMessage(text: string): string {
+export function buildMessage(text: string, category?: string): string {
   const appName = FeedbackConfig.appName;
   const appVersion =
     Application.nativeApplicationVersion ?? "Unknown";
@@ -99,13 +101,18 @@ export function buildMessage(text: string): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   const timestamp = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;
 
-  return [
+  const lines = [
     `\u{1F4F1} App: ${appName}`,
     `\u{1F4E6} Version: ${appVersion}`,
     `${platformEmoji} Platform: ${platformName} ${osVersion}`,
     `\u{1F554} Time: ${timestamp} UTC`,
-    "",
-    `\u{1F4AC} Feedback:`,
-    text,
-  ].join("\n");
+  ];
+
+  if (category && category.trim()) {
+    lines.push(`\u{1F3F7}\u{FE0F} Type: ${category}`);
+  }
+
+  lines.push("", `\u{1F4AC} Feedback:`, text);
+
+  return lines.join("\n");
 }

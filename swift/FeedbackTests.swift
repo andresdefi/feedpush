@@ -105,6 +105,30 @@ final class FeedbackServiceMessageTests: XCTestCase {
         // Total message should be under Telegram's 4096 limit
         XCTAssertTrue(message.count <= 4096)
     }
+
+    func testMessageContainsTypeLineWhenCategoryProvided() {
+        let message = FeedbackService.buildMessage(text: "Test", category: "Bug")
+        XCTAssertTrue(message.contains("Type: Bug"))
+    }
+
+    func testTypeLineSitsBetweenTimeAndFeedback() {
+        let message = FeedbackService.buildMessage(text: "Test", category: "Feature")
+        let timeRange = message.range(of: "Time:")!
+        let typeRange = message.range(of: "Type:")!
+        let feedbackRange = message.range(of: "Feedback:")!
+        XCTAssertTrue(timeRange.lowerBound < typeRange.lowerBound)
+        XCTAssertTrue(typeRange.lowerBound < feedbackRange.lowerBound)
+    }
+
+    func testMessageOmitsTypeLineWhenCategoryNil() {
+        let message = FeedbackService.buildMessage(text: "Test")
+        XCTAssertFalse(message.contains("Type:"))
+    }
+
+    func testMessageOmitsTypeLineWhenCategoryBlank() {
+        let message = FeedbackService.buildMessage(text: "Test", category: "   ")
+        XCTAssertFalse(message.contains("Type:"))
+    }
 }
 
 // MARK: - FeedbackService Send Validation Tests

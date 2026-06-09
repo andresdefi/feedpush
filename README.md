@@ -94,7 +94,12 @@ Each message includes:
 - App name and version
 - Platform and OS version
 - Timestamp (UTC)
+- An optional topic/type (see below)
 - The feedback text
+
+### Topics (optional)
+
+By default the sheet is a single text field. If you set a `categories` list in the config (e.g. `["Feature", "Bug", "Feedback"]`), the sheet shows a segmented topic picker above the text field, and each message is tagged with the chosen topic (`🏷️ Type: Bug`). Leave the list empty to keep the classic single-field sheet. The choice is per-app -- pick your own labels, or none.
 
 ## Security
 

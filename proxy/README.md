@@ -115,9 +115,14 @@ No app update needed -- the proxy handles the routing.
   "app_name": "My App",
   "app_version": "1.0.0",
   "platform": "iOS 18.4",
-  "feedback": "This is great!"
+  "feedback": "This is great!",
+  "category": "Bug"
 }
 ```
+
+`category` is optional. When present, the worker adds a `🏷️ Type:` line to the
+forwarded message. Omit it (older app versions do) and the message is formatted
+exactly as before.
 
 **Success response (200):**
 ```json
@@ -125,7 +130,7 @@ No app update needed -- the proxy handles the routing.
 ```
 
 **Error responses:**
-- `400` -- Invalid JSON, missing fields, empty feedback, or feedback exceeds 2000 characters
+- `400` -- Invalid JSON, missing fields, empty feedback, feedback exceeds 2000 characters, or category exceeds 50 characters
 - `404` -- Wrong endpoint (only `/feedback` is valid)
 - `405` -- Wrong HTTP method (only POST)
 - `429` -- Rate limited

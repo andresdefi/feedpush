@@ -54,7 +54,18 @@ chatID: "123456789",
 const webhookURLCodes: number[] = [104, 116, 116, ...];
 
 appName: "My App",
+
+// Optional feedback topics. Non-empty -> sheet shows a topic picker
+// and tags each message ("Type: Bug"). Empty [] -> classic single field.
+categories: ["Feature", "Bug", "Feedback"] as string[],
 ```
+
+### Topics (optional)
+
+Set `categories` to a non-empty list to show a segmented topic picker above the
+text field. The selected topic is added to the message as a `🏷️ Type:` line and,
+in proxy mode, sent as a `category` field. Leave it `[]` for the classic
+single-field sheet -- no picker, no `Type:` line.
 
 ### 5. Add the button to your app
 

@@ -64,6 +64,13 @@ class FeedbackConfig {
   // The name of your app (shown in the feedback message)
   static const String appName = 'My App';
 
+  // MARK: Topics
+
+  // Optional feedback topics. When non-empty, the sheet shows a segmented
+  // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+  // Leave empty (const []) for the classic single-field sheet with no picker.
+  static const List<String> categories = ['Feature', 'Bug', 'Feedback'];
+
   // MARK: Decoded Values
 
   static String get botToken => String.fromCharCodes(_tokenCodes);

@@ -16,6 +16,7 @@ import {
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendFeedback } from "./FeedbackService";
+import { FeedbackConfig } from "./FeedbackConfig";
 
 // FeedbackSheet
 // A modal with a feedback text field,
@@ -46,6 +47,7 @@ export function FeedbackSheet({
   const isDark = colorScheme === "dark";
 
   const [feedbackText, setFeedbackText] = useState("");
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [isSending, setIsSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -97,7 +99,12 @@ export function FeedbackSheet({
     setIsSending(true);
     setShowError(false);
 
-    const result = await sendFeedback(feedbackText);
+    const category =
+      FeedbackConfig.categories.length > 0
+        ? FeedbackConfig.categories[selectedCategoryIndex]
+        : undefined;
+
+    const result = await sendFeedback(feedbackText, category);
 
     if (result.success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -119,7 +126,7 @@ export function FeedbackSheet({
     }
 
     setIsSending(false);
-  }, [feedbackText, onDismiss, startCooldownTimer]);
+  }, [feedbackText, selectedCategoryIndex, onDismiss, startCooldownTimer]);
 
   const handleDismiss = useCallback(() => {
     setShowSuccess(false);
@@ -156,6 +163,37 @@ export function FeedbackSheet({
               </Text>
             </Pressable>
           </View>
+
+          {/* Topic picker (only when categories are configured) */}
+          {FeedbackConfig.categories.length > 0 && (
+            <View style={[styles.segmentedControl, { backgroundColor: inputBg }]}>
+              {FeedbackConfig.categories.map((category, index) => {
+                const selected = index === selectedCategoryIndex;
+                return (
+                  <Pressable
+                    key={category}
+                    onPress={() => setSelectedCategoryIndex(index)}
+                    style={[
+                      styles.segment,
+                      selected && {
+                        backgroundColor: isDark ? "#48484a" : "#ffffff",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        { color: selected ? textColor : dimColor },
+                        selected && styles.segmentTextSelected,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
 
           {/* Feedback text field */}
           <TextInput
@@ -257,6 +295,26 @@ const styles = StyleSheet.create({
   closeButton: {
     fontSize: 18,
     padding: 4,
+  },
+  segmentedControl: {
+    flexDirection: "row",
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 16,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  segmentTextSelected: {
+    fontWeight: "600",
   },
   feedbackInput: {
     minHeight: 120,
