@@ -35,10 +35,11 @@ The proxy option is the most secure: the app only knows a URL, and all credentia
 2. They see a **"Give Feedback" card button** -- an icon, a title ("Have suggestions?"), a subtitle ("Share your ideas with us"), and a directional arrow.
 3. They tap the button. A **sheet/modal** slides up over the current screen.
 4. The sheet contains:
+   - An optional **topic picker** (segmented control) when topics are configured -- e.g. Feature / Bug / Feedback. Defaults to the first topic.
    - A multi-line text field for their feedback (2000-character limit, live counter)
    - A send button
    - A close/dismiss button
-5. They type their feedback and tap "Send".
+5. They optionally pick a topic, type their feedback, and tap "Send".
 6. The app sends the feedback to the configured channel.
 7. The developer receives the feedback instantly as a push notification.
 
@@ -52,19 +53,23 @@ Each message includes:
 - **App version** (read automatically from the app bundle/package)
 - **Platform + OS version** (read automatically from the device)
 - **Timestamp** (UTC)
+- **Topic** (optional -- only when topics are configured and one is selected)
 - **Feedback text** (what the user typed)
 
-Example:
+Example (with a topic selected):
 
 ```
 📱 App: Flooring Calculator
 📦 Version: 2.1.0
 🍎 Platform: iOS 18.4
 🕐 Time: 2026-04-03 15:10 UTC
+🏷️ Type: Feature
 
 💬 Feedback:
 Can you add support for hexagonal tiles?
 ```
+
+The `🏷️ Type:` line is omitted entirely when no topics are configured (the classic single-field sheet) or the topic is blank, so older app versions that don't send a topic are fully backward compatible.
 
 ## What NOT to Collect
 
@@ -197,11 +202,12 @@ Holds the delivery channel selection and credentials:
 - **Bot token / Webhook URL** (obfuscated, for direct modes)
 - **Chat ID** (for Telegram only)
 - **App name**
+- **Categories** (optional list of feedback topics, e.g. `["Feature", "Bug", "Feedback"]`). When non-empty, the sheet shows a topic picker and tags each message with the chosen topic. Empty (`[]`) keeps the classic single-field sheet with no picker.
 
 ### FeedbackService
 
 Routes feedback to the configured channel:
-- **Proxy mode:** POSTs structured JSON (`app_name`, `app_version`, `platform`, `feedback`) to the proxy URL. The proxy handles formatting.
+- **Proxy mode:** POSTs structured JSON (`app_name`, `app_version`, `platform`, `feedback`, and optional `category`) to the proxy URL. The proxy handles formatting.
 - **Direct mode:** Builds the formatted message locally and POSTs to the respective API.
 
 ### FeedbackButton
@@ -211,6 +217,7 @@ A card-style button with configurable icon, title, subtitle, and directional arr
 ### FeedbackSheet
 
 A bottom sheet or modal with:
+- Optional topic picker (segmented control), shown only when `categories` is non-empty; defaults to the first topic
 - Multi-line text field (2000-char limit, live counter)
 - Send button (disabled when empty, over limit, sending, or in cooldown)
 - Close button
@@ -234,9 +241,9 @@ A bottom sheet or modal with:
 
 A lightweight TypeScript worker (~100 lines) that:
 1. Accepts POST requests to `/feedback`
-2. Validates the JSON payload
+2. Validates the JSON payload (including an optional `category`, capped at 50 chars)
 3. Rate limits by IP (configurable, default 5/min)
-4. Formats the message with emojis and metadata
+4. Formats the message with emojis and metadata (adding a `🏷️ Type:` line when `category` is present)
 5. Forwards to Telegram, Discord, or Slack based on the `CHANNEL` environment variable
 6. Returns `{ ok: true }` or an error
 
@@ -258,4 +265,5 @@ All phases complete:
 - [x] Phase 5: Multi-channel support (Telegram, Discord, Slack)
 - [x] Phase 6: Proxy (Cloudflare Worker)
 - [x] Phase 7: Email field removal
-- [ ] Phase 8: Proxy as fourth delivery option in all platform modules
+- [x] Phase 8: Proxy as fourth delivery option in all platform modules
+- [x] Phase 9: Optional feedback topics (categories) across all platforms + proxy

@@ -21,6 +21,7 @@ class FeedbackResult {
 class FeedbackService {
   static Future<FeedbackResult> send({
     required String text,
+    String? category,
     http.Client? client,
   }) async {
     final trimmed = text.trim();
@@ -33,7 +34,7 @@ class FeedbackService {
 
     switch (FeedbackConfig.channel) {
       case FeedbackChannel.telegram:
-        final message = await buildMessage(text: trimmed);
+        final message = await buildMessage(text: trimmed, category: category);
         final token = FeedbackConfig.botToken;
         url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
         body = jsonEncode({
@@ -43,12 +44,12 @@ class FeedbackService {
         });
         break;
       case FeedbackChannel.discord:
-        final message = await buildMessage(text: trimmed);
+        final message = await buildMessage(text: trimmed, category: category);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'content': message});
         break;
       case FeedbackChannel.slack:
-        final message = await buildMessage(text: trimmed);
+        final message = await buildMessage(text: trimmed, category: category);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'text': message});
         break;
@@ -62,6 +63,8 @@ class FeedbackService {
           'app_version': packageInfo.version,
           'platform': '$platformName $osVersion',
           'feedback': trimmed,
+          if (category != null && category.trim().isNotEmpty)
+            'category': category,
         });
         break;
     }
@@ -91,6 +94,7 @@ class FeedbackService {
 
   static Future<String> buildMessage({
     required String text,
+    String? category,
   }) async {
     final appName = FeedbackConfig.appName;
 
@@ -111,10 +115,15 @@ class FeedbackService {
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+    final typeLine = (category != null && category.trim().isNotEmpty)
+        ? '\u{1F3F7}\u{FE0F} Type: $category\n'
+        : '';
+
     return '\u{1F4F1} App: $appName\n'
         '\u{1F4E6} Version: $appVersion\n'
         '$platformEmoji Platform: $platformName $osVersion\n'
         '\u{1F554} Time: $timestamp UTC\n'
+        '$typeLine'
         '\n'
         '\u{1F4AC} Feedback:\n'
         '$text';

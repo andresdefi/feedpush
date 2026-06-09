@@ -125,6 +125,34 @@ class FeedbackServiceMessageTests {
         val message = FeedbackService.buildMessage(null, "Test")
         assertTrue(message.contains("Version: Unknown"))
     }
+
+    @Test
+    fun `message contains type line when category provided`() {
+        val message = FeedbackService.buildMessage(null, "Test", "Bug")
+        assertTrue(message.contains("Type: Bug"))
+    }
+
+    @Test
+    fun `type line sits between time and feedback`() {
+        val message = FeedbackService.buildMessage(null, "Test", "Feature")
+        val timeIndex = message.indexOf("Time:")
+        val typeIndex = message.indexOf("Type:")
+        val feedbackIndex = message.indexOf("Feedback:")
+        assertTrue(timeIndex < typeIndex)
+        assertTrue(typeIndex < feedbackIndex)
+    }
+
+    @Test
+    fun `message omits type line when category null`() {
+        val message = FeedbackService.buildMessage(null, "Test")
+        assertTrue(!message.contains("Type:"))
+    }
+
+    @Test
+    fun `message omits type line when category blank`() {
+        val message = FeedbackService.buildMessage(null, "Test", "   ")
+        assertTrue(!message.contains("Type:"))
+    }
 }
 
 // MARK: FeedbackConfig Channel Tests

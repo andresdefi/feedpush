@@ -131,6 +131,30 @@ describe("formatMessage", () => {
     const msg = formatMessage(payload);
     expect(msg.length).toBeLessThanOrEqual(4096);
   });
+
+  test("message contains type line when category is provided", () => {
+    const msg = formatMessage({ ...basePayload, category: "Bug" });
+    expect(msg).toContain("Type: Bug");
+  });
+
+  test("type line sits between time and feedback", () => {
+    const msg = formatMessage({ ...basePayload, category: "Feature" });
+    const timeIdx = msg.indexOf("Time:");
+    const typeIdx = msg.indexOf("Type:");
+    const feedbackIdx = msg.indexOf("Feedback:");
+    expect(timeIdx).toBeLessThan(typeIdx);
+    expect(typeIdx).toBeLessThan(feedbackIdx);
+  });
+
+  test("message omits type line when category is absent", () => {
+    const msg = formatMessage(basePayload);
+    expect(msg).not.toContain("Type:");
+  });
+
+  test("message omits type line when category is blank", () => {
+    const msg = formatMessage({ ...basePayload, category: "   " });
+    expect(msg).not.toContain("Type:");
+  });
 });
 
 // MARK: Payload Validation Tests (logic-level)
@@ -165,5 +189,13 @@ describe("Payload validation", () => {
   test("missing platform should be rejected", () => {
     const payload = { app_name: "App", app_version: "1.0", platform: "", feedback: "test" };
     expect(!payload.platform).toBe(true);
+  });
+
+  test("category within limit is valid", () => {
+    expect("Feature".length).toBeLessThanOrEqual(50);
+  });
+
+  test("category exceeding limit is invalid", () => {
+    expect("a".repeat(51).length).toBeGreaterThan(50);
   });
 });

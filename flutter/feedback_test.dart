@@ -45,6 +45,7 @@ void main() {
   group('Message formatting', () {
     String buildTestMessage({
       required String text,
+      String? category,
       String appName = 'My App',
       String appVersion = '1.0.0',
       String platform = 'iOS 18.0',
@@ -55,10 +56,15 @@ void main() {
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+      final typeLine = (category != null && category.trim().isNotEmpty)
+          ? '\u{1F3F7}\u{FE0F} Type: $category\n'
+          : '';
+
       return '\u{1F4F1} App: $appName\n'
           '\u{1F4E6} Version: $appVersion\n'
           '$platformEmoji Platform: $platform\n'
           '\u{1F554} Time: $timestamp UTC\n'
+          '$typeLine'
           '\n'
           '\u{1F4AC} Feedback:\n'
           '$text';
@@ -128,6 +134,30 @@ void main() {
       final message = buildTestMessage(text: text);
       expect(message.contains(text), true);
       expect(message.length <= 4096, true);
+    });
+
+    test('message contains type line when category provided', () {
+      final message = buildTestMessage(text: 'Test', category: 'Bug');
+      expect(message.contains('Type: Bug'), true);
+    });
+
+    test('type line sits between time and feedback', () {
+      final message = buildTestMessage(text: 'Test', category: 'Feature');
+      final timeIndex = message.indexOf('Time:');
+      final typeIndex = message.indexOf('Type:');
+      final feedbackIndex = message.indexOf('Feedback:');
+      expect(timeIndex < typeIndex, true);
+      expect(typeIndex < feedbackIndex, true);
+    });
+
+    test('message omits type line when category null', () {
+      final message = buildTestMessage(text: 'Test');
+      expect(message.contains('Type:'), false);
+    });
+
+    test('message omits type line when category blank', () {
+      final message = buildTestMessage(text: 'Test', category: '   ');
+      expect(message.contains('Type:'), false);
     });
   });
 

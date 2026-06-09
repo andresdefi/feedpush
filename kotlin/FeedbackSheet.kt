@@ -29,6 +29,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -74,6 +77,7 @@ fun FeedbackSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var feedbackText by remember { mutableStateOf("") }
+    var selectedCategoryIndex by remember { mutableIntStateOf(0) }
     var isSending by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
@@ -139,6 +143,25 @@ fun FeedbackSheet(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Topic picker (only when categories are configured)
+                if (FeedbackConfig.categories.isNotEmpty()) {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        FeedbackConfig.categories.forEachIndexed { index, category ->
+                            SegmentedButton(
+                                selected = selectedCategoryIndex == index,
+                                onClick = { selectedCategoryIndex = index },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = FeedbackConfig.categories.size
+                                )
+                            ) {
+                                Text(category)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 // Feedback text field
                 OutlinedTextField(
                     value = feedbackText,
@@ -174,7 +197,8 @@ fun FeedbackSheet(
                             isSending = true
                             showError = false
 
-                            val result = FeedbackService.send(context, feedbackText)
+                            val category = FeedbackConfig.categories.getOrNull(selectedCategoryIndex)
+                            val result = FeedbackService.send(context, feedbackText, category)
 
                             when (result) {
                                 is FeedbackResult.Success -> {

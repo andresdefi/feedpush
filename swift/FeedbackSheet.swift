@@ -14,6 +14,7 @@ struct FeedbackSheet: View {
     var errorMessage: String = "Could not send feedback. Please check your connection and try again."
 
     @State private var feedbackText = ""
+    @State private var selectedCategory = FeedbackConfig.categories.first ?? ""
     @State private var isSending = false
     @State private var showSuccess = false
     @State private var showError = false
@@ -34,6 +35,9 @@ struct FeedbackSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if !FeedbackConfig.categories.isEmpty {
+                        categoryPicker
+                    }
                     feedbackField
                     sendButton
                 }
@@ -62,6 +66,17 @@ struct FeedbackSheet: View {
             .contentShape(Rectangle())
             .onTapGesture { focusedField = nil }
         }
+    }
+
+    // MARK: - Category Picker
+
+    private var categoryPicker: some View {
+        Picker("Topic", selection: $selectedCategory) {
+            ForEach(FeedbackConfig.categories, id: \.self) { category in
+                Text(category).tag(category)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     // MARK: - Feedback Text Field
@@ -157,7 +172,8 @@ struct FeedbackSheet: View {
         isSending = true
 
         do {
-            try await FeedbackService.send(text: feedbackText)
+            let category = FeedbackConfig.categories.isEmpty ? nil : selectedCategory
+            try await FeedbackService.send(text: feedbackText, category: category)
             triggerHaptic()
             withAnimation { showSuccess = true }
             saveCooldownTimestamp()
