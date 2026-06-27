@@ -1,7 +1,4 @@
 import Foundation
-#if canImport(UIKit)
-import UIKit
-#endif
 
 // MARK: - FeedbackService
 // Sends feedback via Telegram, Discord, Slack, or Proxy depending on FeedbackConfig.channel.
@@ -130,8 +127,11 @@ enum FeedbackService {
 
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
 
+        // ProcessInfo (not UIDevice) so this stays off the main actor - the request
+        // is built from this nonisolated async context.
+        let os = ProcessInfo.processInfo.operatingSystemVersion
         #if os(iOS)
-        let platform = "iOS \(UIDevice.current.systemVersion)"
+        let platform = "iOS \(os.majorVersion).\(os.minorVersion)"
         #else
         let platform = ProcessInfo.processInfo.operatingSystemVersionString
         #endif
@@ -159,10 +159,12 @@ enum FeedbackService {
         let appName = FeedbackConfig.appName
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+        // ProcessInfo (not UIDevice) so buildMessage stays off the main actor.
+        let os = ProcessInfo.processInfo.operatingSystemVersion
 
         #if os(iOS)
         let platformEmoji = "\u{1F34E}"
-        let platform = "iOS \(UIDevice.current.systemVersion)"
+        let platform = "iOS \(os.majorVersion).\(os.minorVersion)"
         #else
         let platformEmoji = "\u{1F4F1}"
         let platform = osVersion

@@ -19,7 +19,7 @@ struct FeedbackSheet: View {
     @State private var showSuccess = false
     @State private var showError = false
     @State private var cooldownRemaining = 0
-    @State private var cooldownTimer: Timer?
+    @State private var countdownTask: Task<Void, Never>?
 
     @FocusState private var focusedField: Field?
 
@@ -62,7 +62,7 @@ struct FeedbackSheet: View {
                 Text(errorMessage)
             }
             .onAppear { startCooldownIfNeeded() }
-            .onDisappear { cooldownTimer?.invalidate() }
+            .onDisappear { countdownTask?.cancel() }
             .contentShape(Rectangle())
             .onTapGesture { focusedField = nil }
         }
@@ -177,7 +177,8 @@ struct FeedbackSheet: View {
             triggerHaptic()
             withAnimation { showSuccess = true }
             saveCooldownTimestamp()
-            startCooldownTimer()
+            cooldownRemaining = cooldownDuration
+            startCountdown()
             feedbackText = ""
 
             try? await Task.sleep(for: .seconds(2))
@@ -211,17 +212,20 @@ struct FeedbackSheet: View {
 
         if remaining > 0 {
             cooldownRemaining = remaining
-            startCooldownTimer()
+            startCountdown()
         }
     }
 
-    private func startCooldownTimer() {
-        cooldownTimer?.invalidate()
-        cooldownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            if cooldownRemaining > 0 {
+    /// Counts the cooldown down on the main actor. A main-actor `Task` (not a
+    /// `Timer` whose `@Sendable` closure would touch `@State`) keeps this free of
+    /// Swift concurrency warnings.
+    private func startCountdown() {
+        countdownTask?.cancel()
+        countdownTask = Task { @MainActor in
+            while cooldownRemaining > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
                 cooldownRemaining -= 1
-            } else {
-                cooldownTimer?.invalidate()
             }
         }
     }
