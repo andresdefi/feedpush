@@ -23,7 +23,7 @@ class FeedbackSheet extends StatefulWidget {
 
   const FeedbackSheet({
     super.key,
-    this.feedbackPlaceholder = "What would you like the app to do?",
+    this.feedbackPlaceholder = "What can we improve?",
     this.sendButtonText = 'Send',
     this.successMessage = 'Thank you for your feedback!',
     this.errorMessage =

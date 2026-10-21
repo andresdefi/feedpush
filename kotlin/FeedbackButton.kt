@@ -37,7 +37,7 @@ fun FeedbackButton(
     title: String = "Have an idea?",
     subtitle: String = "Share your ideas with us",
     // Pass all FeedbackSheet customization through here
-    feedbackPlaceholder: String = "What would you like the app to do?",
+    feedbackPlaceholder: String = "What can we improve?",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."

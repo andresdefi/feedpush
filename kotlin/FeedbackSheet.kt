@@ -66,7 +66,7 @@ private const val COOLDOWN_KEY = "feedpush_last_send_timestamp"
 @Composable
 fun FeedbackSheet(
     onDismiss: () -> Unit,
-    feedbackPlaceholder: String = "What would you like the app to do?",
+    feedbackPlaceholder: String = "What can we improve?",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."

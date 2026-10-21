@@ -8,7 +8,7 @@ struct FeedbackSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     // Configurable strings
-    var feedbackPlaceholder: String = "What would you like the app to do?"
+    var feedbackPlaceholder: String = "What can we improve?"
     var sendButtonText: String = "Send"
     var successMessage: String = "Thank you for your feedback!"
     var errorMessage: String = "Could not send feedback. Please check your connection and try again."
