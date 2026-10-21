@@ -17,7 +17,7 @@ interface FeedbackPayload {
   app_version: string;
   platform: string;
   feedback: string;
-  category?: string; // Optional topic (e.g. "Feature", "Bug", "Feedback")
+  category?: string; // Optional topic (e.g. "Feature", "Improvement")
 }
 
 // Simple in-memory rate limiter (resets on worker restart, which is fine)

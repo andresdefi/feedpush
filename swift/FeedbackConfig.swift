@@ -75,9 +75,9 @@ struct FeedbackConfig {
     // MARK: - Topics
 
     // Optional feedback topics. When non-empty, the sheet shows a segmented
-    // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+    // picker and tags each message with the chosen topic (e.g. "Type: Feature").
     // Leave empty ([]) for the classic single-field sheet with no picker.
-    static let categories: [String] = ["Feature", "Bug", "Feedback"]
+    static let categories: [String] = []
 
     // MARK: - Decoded Values
 

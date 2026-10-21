@@ -116,7 +116,7 @@ No app update needed -- the proxy handles the routing.
   "app_version": "1.0.0",
   "platform": "iOS 18.4",
   "feedback": "This is great!",
-  "category": "Bug"
+  "category": "Feature"
 }
 ```
 

@@ -6,7 +6,7 @@ import SwiftUI
 
 struct FeedbackButton: View {
     var icon: String = "\u{1F4A1}"
-    var title: String = "Have suggestions?"
+    var title: String = "Have an idea?"
     var subtitle: String = "Share your ideas with us"
 
     @State private var showSheet = false
@@ -55,9 +55,9 @@ struct FeedbackButton: View {
             .padding()
 
         FeedbackButton(
-            icon: "\u{1F41B}",
-            title: "Found a bug?",
-            subtitle: "Let us know so we can fix it"
+            icon: "\u{2728}",
+            title: "Missing a feature?",
+            subtitle: "Tell us what to build next"
         )
         .padding(.horizontal)
     }

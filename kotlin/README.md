@@ -60,8 +60,8 @@ private val webhookURLBytes: ByteArray = byteArrayOf(104, 116, 116, ...)
 const val appName: String = "My App"
 
 // Optional feedback topics. Non-empty -> sheet shows a topic picker
-// and tags each message ("Type: Bug"). Empty -> classic single field.
-val categories: List<String> = listOf("Feature", "Bug", "Feedback")
+// and tags each message ("Type: Feature"). Empty -> classic single field.
+val categories: List<String> = emptyList()
 ```
 
 ### Topics (optional)
@@ -92,12 +92,12 @@ You can customize the button and sheet text:
 
 ```kotlin
 FeedbackButton(
-    icon = "\uD83D\uDC1B",
-    title = "Found a bug?",
-    subtitle = "Let us know so we can fix it",
-    feedbackPlaceholder = "Tell us what happened...",
+    icon = "\u2728",
+    title = "Missing a feature?",
+    subtitle = "Tell us what to build next",
+    feedbackPlaceholder = "Describe the feature you'd like...",
     sendButtonText = "Submit",
-    successMessage = "Thanks! We'll look into it."
+    successMessage = "Thanks! We read every idea."
 )
 ```
 

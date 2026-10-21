@@ -56,8 +56,8 @@ const webhookURLCodes: number[] = [104, 116, 116, ...];
 appName: "My App",
 
 // Optional feedback topics. Non-empty -> sheet shows a topic picker
-// and tags each message ("Type: Bug"). Empty [] -> classic single field.
-categories: ["Feature", "Bug", "Feedback"] as string[],
+// and tags each message ("Type: Feature"). Empty [] -> classic single field.
+categories: [] as string[],
 ```
 
 ### Topics (optional)
@@ -89,12 +89,12 @@ You can customize the button and sheet text:
 
 ```tsx
 <FeedbackButton
-  icon={"\u{1F41B}"}
-  title="Found a bug?"
-  subtitle="Let us know so we can fix it"
-  feedbackPlaceholder="Tell us what happened..."
+  icon={"\u{2728}"}
+  title="Missing a feature?"
+  subtitle="Tell us what to build next"
+  feedbackPlaceholder="Describe the feature you'd like..."
   sendButtonText="Submit"
-  successMessage="Thanks! We'll look into it."
+  successMessage="Thanks! We read every idea."
 />
 ```
 

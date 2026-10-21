@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.sp
 fun FeedbackButton(
     modifier: Modifier = Modifier,
     icon: String = "\uD83D\uDCA1",
-    title: String = "Have suggestions?",
+    title: String = "Have an idea?",
     subtitle: String = "Share your ideas with us",
     // Pass all FeedbackSheet customization through here
-    feedbackPlaceholder: String = "What's on your mind?",
+    feedbackPlaceholder: String = "What would you like the app to do?",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."

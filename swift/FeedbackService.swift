@@ -27,7 +27,7 @@ enum FeedbackError: LocalizedError {
 enum FeedbackService {
 
     /// Sends feedback using the configured delivery channel.
-    /// - Parameter category: optional topic (e.g. "Bug"). Pass `nil` to omit.
+    /// - Parameter category: optional topic (e.g. "Feature"). Pass `nil` to omit.
     static func send(text: String, category: String? = nil, session: URLSession = .shared) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }

@@ -97,9 +97,13 @@ Each message includes:
 - An optional topic/type (see below)
 - The feedback text
 
+### Ideas, not bug reports
+
+FeedPush is one-way and anonymous: you can read a message but never reply to it. That works well for feature ideas and suggestions, which is what the default wording asks for ("Have an idea?"). Bug reports usually need a conversation, screenshots or a screen recording, so point users to a channel where you can answer them (a support email or contact link) instead.
+
 ### Topics (optional)
 
-By default the sheet is a single text field. If you set a `categories` list in the config (e.g. `["Feature", "Bug", "Feedback"]`), the sheet shows a segmented topic picker above the text field, and each message is tagged with the chosen topic (`🏷️ Type: Bug`). Leave the list empty to keep the classic single-field sheet. The choice is per-app -- pick your own labels, or none.
+By default the sheet is a single text field. If you set a `categories` list in the config (e.g. `["Feature", "Improvement"]`), the sheet shows a segmented topic picker above the text field, and each message is tagged with the chosen topic (`🏷️ Type: Feature`). Leave the list empty to keep the classic single-field sheet. The choice is per-app -- pick your own labels, or none.
 
 ## Security
 

@@ -19,9 +19,9 @@ class FeedbackButton extends StatelessWidget {
   const FeedbackButton({
     super.key,
     this.icon = '\u{1F4A1}',
-    this.title = 'Have suggestions?',
+    this.title = 'Have an idea?',
     this.subtitle = 'Share your ideas with us',
-    this.feedbackPlaceholder = "What's on your mind?",
+    this.feedbackPlaceholder = "What would you like the app to do?",
     this.sendButtonText = 'Send',
     this.successMessage = 'Thank you for your feedback!',
     this.errorMessage =

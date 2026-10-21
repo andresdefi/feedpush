@@ -4,6 +4,8 @@
 
 A drop-in feedback module for mobile apps. Users tap a button, type feedback, and the developer receives it instantly on their phone. No database, no backend server, no user accounts.
 
+FeedPush is meant for feature ideas and suggestions. Because it is one-way and anonymous (the developer cannot reply), bug reports belong in a channel where the developer can answer, such as a support email.
+
 Supports four platforms:
 - **Swift** (iOS - SwiftUI)
 - **Kotlin** (Android - Jetpack Compose)
@@ -32,10 +34,10 @@ The proxy option is the most secure: the app only knows a URL, and all credentia
 ## User Flow
 
 1. User opens the app's settings screen (or wherever the button is placed).
-2. They see a **"Give Feedback" card button** -- an icon, a title ("Have suggestions?"), a subtitle ("Share your ideas with us"), and a directional arrow.
+2. They see a **"Give Feedback" card button** -- an icon, a title ("Have an idea?"), a subtitle ("Share your ideas with us"), and a directional arrow.
 3. They tap the button. A **sheet/modal** slides up over the current screen.
 4. The sheet contains:
-   - An optional **topic picker** (segmented control) when topics are configured -- e.g. Feature / Bug / Feedback. Defaults to the first topic.
+   - An optional **topic picker** (segmented control) when topics are configured -- e.g. Feature / Improvement. Defaults to the first topic.
    - A multi-line text field for their feedback (2000-character limit, live counter)
    - A send button
    - A close/dismiss button
@@ -202,7 +204,7 @@ Holds the delivery channel selection and credentials:
 - **Bot token / Webhook URL** (obfuscated, for direct modes)
 - **Chat ID** (for Telegram only)
 - **App name**
-- **Categories** (optional list of feedback topics, e.g. `["Feature", "Bug", "Feedback"]`). When non-empty, the sheet shows a topic picker and tags each message with the chosen topic. Empty (`[]`) keeps the classic single-field sheet with no picker.
+- **Categories** (optional list of feedback topics, e.g. `["Feature", "Improvement"]`). When non-empty, the sheet shows a topic picker and tags each message with the chosen topic. Empty (`[]`) keeps the classic single-field sheet with no picker.
 
 ### FeedbackService
 

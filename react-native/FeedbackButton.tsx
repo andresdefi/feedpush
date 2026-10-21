@@ -25,7 +25,7 @@ interface FeedbackButtonProps {
 
 export function FeedbackButton({
   icon = "\u{1F4A1}",
-  title = "Have suggestions?",
+  title = "Have an idea?",
   subtitle = "Share your ideas with us",
   feedbackPlaceholder,
   sendButtonText,

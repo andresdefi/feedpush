@@ -38,7 +38,7 @@ interface FeedbackSheetProps {
 export function FeedbackSheet({
   visible,
   onDismiss,
-  feedbackPlaceholder = "What's on your mind?",
+  feedbackPlaceholder = "What would you like the app to do?",
   sendButtonText = "Send",
   successMessage = "Thank you for your feedback!",
   errorMessage = "Could not send feedback. Please check your connection and try again.",

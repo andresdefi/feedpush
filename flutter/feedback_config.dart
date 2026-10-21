@@ -67,9 +67,9 @@ class FeedbackConfig {
   // MARK: Topics
 
   // Optional feedback topics. When non-empty, the sheet shows a segmented
-  // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+  // picker and tags each message with the chosen topic (e.g. "Type: Feature").
   // Leave empty (const []) for the classic single-field sheet with no picker.
-  static const List<String> categories = ['Feature', 'Bug', 'Feedback'];
+  static const List<String> categories = [];
 
   // MARK: Decoded Values
 

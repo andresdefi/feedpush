@@ -71,8 +71,8 @@ static let webhookURLBytes: [UInt8] = [104, 116, 116, ...]
 static let appName = "My App"
 
 // Optional feedback topics. Non-empty -> sheet shows a topic picker
-// and tags each message ("Type: Bug"). Empty [] -> classic single field.
-static let categories: [String] = ["Feature", "Bug", "Feedback"]
+// and tags each message ("Type: Feature"). Empty [] -> classic single field.
+static let categories: [String] = []
 ```
 
 ### Topics (optional)
@@ -103,9 +103,9 @@ You can customize the button text:
 
 ```swift
 FeedbackButton(
-    icon: "\u{1F41B}",
-    title: "Found a bug?",
-    subtitle: "Let us know so we can fix it"
+    icon: "\u{2728}",
+    title: "Missing a feature?",
+    subtitle: "Tell us what to build next"
 )
 ```
 
@@ -114,9 +114,9 @@ And the sheet strings:
 ```swift
 // Inside FeedbackButton, the sheet is configurable too:
 FeedbackSheet(
-    feedbackPlaceholder: "Tell us what happened...",
+    feedbackPlaceholder: "Describe the feature you'd like...",
     sendButtonText: "Submit",
-    successMessage: "Thanks! We'll look into it."
+    successMessage: "Thanks! We read every idea."
 )
 ```
 

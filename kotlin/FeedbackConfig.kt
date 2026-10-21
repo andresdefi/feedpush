@@ -73,9 +73,9 @@ object FeedbackConfig {
     // MARK: Topics
 
     // Optional feedback topics. When non-empty, the sheet shows a segmented
-    // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+    // picker and tags each message with the chosen topic (e.g. "Type: Feature").
     // Leave empty (emptyList()) for the classic single-field sheet with no picker.
-    val categories: List<String> = listOf("Feature", "Bug", "Feedback")
+    val categories: List<String> = emptyList()
 
     // MARK: Decoded Values
 

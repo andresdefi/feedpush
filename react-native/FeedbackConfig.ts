@@ -56,9 +56,9 @@ export const FeedbackConfig = {
   appName: "My App",
 
   // Optional feedback topics. When non-empty, the sheet shows a segmented
-  // picker and tags each message with the chosen topic (e.g. "Type: Bug").
+  // picker and tags each message with the chosen topic (e.g. "Type: Feature").
   // Leave empty ([]) for the classic single-field sheet with no picker.
-  categories: ["Feature", "Bug", "Feedback"] as string[],
+  categories: [] as string[],
 
   // Proxy URL (only needed for "proxy")
   proxyURL: "https://your-proxy.workers.dev/feedback",
