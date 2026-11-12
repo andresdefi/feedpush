@@ -25,11 +25,28 @@ sealed class FeedbackResult {
 
 object FeedbackService {
 
-    suspend fun send(context: Context, text: String, category: String? = null): FeedbackResult {
+    private val EMAIL_PATTERN = Regex("^[^\\s@`]+@[^\\s@`]+\\.[^\\s@`]+$")
+
+    /**
+     * A plain address: no spaces or backticks (it is shown inside a Markdown code span), one @
+     * and a dot after it. The proxy checks the same.
+     */
+    fun isValidEmail(email: String): Boolean {
+        val trimmed = email.trim()
+        return trimmed.length <= 254 && EMAIL_PATTERN.matches(trimmed)
+    }
+
+    /**
+     * @param category optional topic (e.g. "Feature"); null to omit.
+     * @param email optional reply address, only when the user wants an answer; blank = none.
+     */
+    suspend fun send(context: Context, text: String, category: String? = null, email: String? = null): FeedbackResult {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return FeedbackResult.Error("Feedback text cannot be empty.")
+        val replyTo = email?.trim()?.ifEmpty { null }
+        if (replyTo != null && !isValidEmail(replyTo)) return FeedbackResult.Error("The email address doesn't look right.")
 
-        val message = buildMessage(context, trimmed, category)
+        val message = buildMessage(context, trimmed, category, replyTo)
 
         return withContext(Dispatchers.IO) {
             try {
@@ -37,7 +54,7 @@ object FeedbackService {
                     FeedbackChannel.TELEGRAM -> buildTelegramPayload(message)
                     FeedbackChannel.DISCORD -> buildDiscordPayload(message)
                     FeedbackChannel.SLACK -> buildSlackPayload(message)
-                    FeedbackChannel.PROXY -> buildProxyPayload(context, trimmed, category)
+                    FeedbackChannel.PROXY -> buildProxyPayload(context, trimmed, category, replyTo)
                 }
 
                 val connection = url.openConnection() as HttpURLConnection
@@ -97,7 +114,7 @@ object FeedbackService {
         return url to body
     }
 
-    private fun buildProxyPayload(context: Context?, text: String, category: String?): Pair<URL, JSONObject> {
+    internal fun buildProxyPayload(context: Context?, text: String, category: String?, email: String? = null): Pair<URL, JSONObject> {
         val url = URL(FeedbackConfig.proxyURL)
 
         val appVersion = try {
@@ -114,13 +131,14 @@ object FeedbackService {
             put("platform", platform)
             put("feedback", text)
             if (!category.isNullOrBlank()) put("category", category)
+            if (!email.isNullOrBlank()) put("email", email.trim())
         }
         return url to body
     }
 
     // MARK: Message Formatting
 
-    internal fun buildMessage(context: Context?, text: String, category: String? = null): String {
+    internal fun buildMessage(context: Context?, text: String, category: String? = null, email: String? = null): String {
         val appName = FeedbackConfig.appName
 
         val appVersion = try {
@@ -142,6 +160,10 @@ object FeedbackService {
             appendLine("\uD83D\uDD54 Time: $timestamp UTC")
             if (!category.isNullOrBlank()) {
                 appendLine("\uD83C\uDFF7\uFE0F Type: $category")
+            }
+            // In a code span: Markdown can't break on "_", and it copies in one tap.
+            if (!email.isNullOrBlank()) {
+                appendLine("\u2709\uFE0F Reply to: `${email.trim()}`")
             }
             appendLine()
             appendLine("\uD83D\uDCAC Feedback:")

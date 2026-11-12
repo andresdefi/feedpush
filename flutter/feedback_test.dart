@@ -161,6 +161,29 @@ void main() {
     });
   });
 
+  // MARK: Optional reply email
+
+  group('Reply email', () {
+    // Inline equivalent of FeedbackService.isValidEmail.
+    bool isValidEmail(String email) {
+      final trimmed = email.trim();
+      return trimmed.length <= 254 &&
+          RegExp(r'^[^\s@`]+@[^\s@`]+\.[^\s@`]+$').hasMatch(trimmed);
+    }
+
+    test('plain addresses are accepted', () {
+      for (final ok in ['a@b.co', 'john_doe@mail.com', 'first.last+tag@sub.example.it']) {
+        expect(isValidEmail(ok), true, reason: ok);
+      }
+    });
+
+    test('anything else is refused', () {
+      for (final bad in ['', 'nope', 'a@b', 'a b@c.com', '`a`@b.com', 'a@@b.com', '${'a' * 250}@b.com']) {
+        expect(isValidEmail(bad), false, reason: bad);
+      }
+    });
+  });
+
   // MARK: FeedbackResult Tests
 
   group('FeedbackResult', () {

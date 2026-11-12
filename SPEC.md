@@ -4,7 +4,7 @@
 
 A drop-in feedback module for mobile apps. Users tap a button, type feedback, and the developer receives it instantly on their phone. No database, no backend server, no user accounts.
 
-FeedPush is meant for feature ideas and suggestions. Because it is one-way and anonymous (the developer cannot reply), bug reports belong in a channel where the developer can answer, such as a support email.
+FeedPush is meant for feature ideas and suggestions. It is one-way: the developer can only answer when the user leaves an email in the optional reply field. Bug reports still belong in a channel built for a conversation, such as a support email, but people send them here anyway, so the reply field keeps those answerable.
 
 Supports four platforms:
 - **Swift** (iOS - SwiftUI)
@@ -39,6 +39,7 @@ The proxy option is the most secure: the app only knows a URL, and all credentia
 4. The sheet contains:
    - An optional **topic picker** (segmented control) when topics are configured -- e.g. Feature / Improvement. Defaults to the first topic.
    - A multi-line text field for their feedback (2000-character limit, live counter)
+   - An optional single-line email field ("Your email (optional)", hint "Only if you'd like a reply."). Send stays disabled while a typed address is not a plain email.
    - A send button
    - A close/dismiss button
 5. They optionally pick a topic, type their feedback, and tap "Send".
@@ -56,6 +57,7 @@ Each message includes:
 - **Platform + OS version** (read automatically from the device)
 - **Timestamp** (UTC)
 - **Topic** (optional -- only when topics are configured and one is selected)
+- **Reply to** (optional -- only when the user typed an email)
 - **Feedback text** (what the user typed)
 
 Example (with a topic selected):
@@ -71,11 +73,17 @@ Example (with a topic selected):
 Can you add support for hexagonal tiles?
 ```
 
+With an email, a `✉️ Reply to:` line follows (after Type, before Feedback), the address in a Markdown code span so an underscore can't break Telegram's Markdown and it copies in one tap:
+
+```
+✉️ Reply to: `maria_rossi@mail.it`
+```
+
 The `🏷️ Type:` line is omitted entirely when no topics are configured (the classic single-field sheet) or the topic is blank, so older app versions that don't send a topic are fully backward compatible.
 
 ## What NOT to Collect
 
-- No email addresses
+- No email address unless the user types one in the optional reply field (never required, never pre-filled, used only to answer that message)
 - No device model
 - No device UUID or unique identifiers
 - No user name or user ID
@@ -209,7 +217,7 @@ Holds the delivery channel selection and credentials:
 ### FeedbackService
 
 Routes feedback to the configured channel:
-- **Proxy mode:** POSTs structured JSON (`app_name`, `app_version`, `platform`, `feedback`, and optional `category`) to the proxy URL. The proxy handles formatting.
+- **Proxy mode:** POSTs structured JSON (`app_name`, `app_version`, `platform`, `feedback`, and optional `category` and `email`) to the proxy URL. The proxy handles formatting.
 - **Direct mode:** Builds the formatted message locally and POSTs to the respective API.
 
 ### FeedbackButton
@@ -221,7 +229,8 @@ A card-style button with configurable icon, title, subtitle, and directional arr
 A bottom sheet or modal with:
 - Optional topic picker (segmented control), shown only when `categories` is non-empty; defaults to the first topic
 - Multi-line text field (2000-char limit, live counter)
-- Send button (disabled when empty, over limit, sending, or in cooldown)
+- Optional email field (email keyboard, no autocorrect or capitalization); `isValidEmail` decides
+- Send button (disabled when empty, over limit, email invalid, sending, or in cooldown)
 - Close button
 - Success: haptic feedback + "Thank you!" + auto-dismiss after 2 seconds
 - Error: inline error message
@@ -243,9 +252,9 @@ A bottom sheet or modal with:
 
 A lightweight TypeScript worker (~100 lines) that:
 1. Accepts POST requests to `/feedback`
-2. Validates the JSON payload (including an optional `category`, capped at 50 chars)
+2. Validates the JSON payload (including an optional `category`, capped at 50 chars, and an optional `email`: a plain address, no spaces or backticks, at most 254 chars)
 3. Rate limits by IP (configurable, default 5/min)
-4. Formats the message with emojis and metadata (adding a `🏷️ Type:` line when `category` is present)
+4. Formats the message with emojis and metadata (adding a `🏷️ Type:` line when `category` is present and a `✉️ Reply to:` line when `email` is)
 5. Forwards to Telegram, Discord, or Slack based on the `CHANNEL` environment variable
 6. Returns `{ ok: true }` or an error
 
@@ -269,3 +278,4 @@ All phases complete:
 - [x] Phase 7: Email field removal
 - [x] Phase 8: Proxy as fourth delivery option in all platform modules
 - [x] Phase 9: Optional feedback topics (categories) across all platforms + proxy
+- [x] Phase 10: Optional reply email across all platforms + proxy (2026-11-12). Reverses Phase 7: a bug sent through FeedPush (Spentio, 2026-11-11) couldn't be answered. Optional, never required, shown as "Reply to" in the message. Apps that use it declare it in their privacy policy and Play Data safety (email address, optional, app functionality / developer communications)

@@ -19,14 +19,30 @@ class FeedbackResult {
 }
 
 class FeedbackService {
+  static final _emailPattern = RegExp(r'^[^\s@`]+@[^\s@`]+\.[^\s@`]+$');
+
+  /// A plain address: no spaces or backticks (it is shown inside a Markdown
+  /// code span), one @ and a dot after it. The proxy checks the same.
+  static bool isValidEmail(String email) {
+    final trimmed = email.trim();
+    return trimmed.length <= 254 && _emailPattern.hasMatch(trimmed);
+  }
+
+  /// [email] is an optional reply address, only when the user wants an
+  /// answer; blank means none.
   static Future<FeedbackResult> send({
     required String text,
     String? category,
+    String? email,
     http.Client? client,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
       return const FeedbackResult.failure('Feedback text cannot be empty.');
+    }
+    final replyTo = (email == null || email.trim().isEmpty) ? null : email.trim();
+    if (replyTo != null && !isValidEmail(replyTo)) {
+      return const FeedbackResult.failure("The email address doesn't look right.");
     }
 
     final Uri url;
@@ -34,7 +50,7 @@ class FeedbackService {
 
     switch (FeedbackConfig.channel) {
       case FeedbackChannel.telegram:
-        final message = await buildMessage(text: trimmed, category: category);
+        final message = await buildMessage(text: trimmed, category: category, email: replyTo);
         final token = FeedbackConfig.botToken;
         url = Uri.parse('https://api.telegram.org/bot$token/sendMessage');
         body = jsonEncode({
@@ -44,12 +60,12 @@ class FeedbackService {
         });
         break;
       case FeedbackChannel.discord:
-        final message = await buildMessage(text: trimmed, category: category);
+        final message = await buildMessage(text: trimmed, category: category, email: replyTo);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'content': message});
         break;
       case FeedbackChannel.slack:
-        final message = await buildMessage(text: trimmed, category: category);
+        final message = await buildMessage(text: trimmed, category: category, email: replyTo);
         url = Uri.parse(FeedbackConfig.webhookURL);
         body = jsonEncode({'text': message});
         break;
@@ -65,6 +81,7 @@ class FeedbackService {
           'feedback': trimmed,
           if (category != null && category.trim().isNotEmpty)
             'category': category,
+          if (replyTo != null) 'email': replyTo,
         });
         break;
     }
@@ -95,6 +112,7 @@ class FeedbackService {
   static Future<String> buildMessage({
     required String text,
     String? category,
+    String? email,
   }) async {
     final appName = FeedbackConfig.appName;
 
@@ -119,11 +137,17 @@ class FeedbackService {
         ? '\u{1F3F7}\u{FE0F} Type: $category\n'
         : '';
 
+    // In a code span: Markdown can't break on "_", and it copies in one tap.
+    final replyLine = (email != null && email.trim().isNotEmpty)
+        ? '\u{2709}\u{FE0F} Reply to: `${email.trim()}`\n'
+        : '';
+
     return '\u{1F4F1} App: $appName\n'
         '\u{1F4E6} Version: $appVersion\n'
         '$platformEmoji Platform: $platformName $osVersion\n'
         '\u{1F554} Time: $timestamp UTC\n'
         '$typeLine'
+        '$replyLine'
         '\n'
         '\u{1F4AC} Feedback:\n'
         '$text';

@@ -3,7 +3,7 @@
 // Run with: npx vitest (after adding vitest to devDependencies)
 
 import { describe, test, expect, beforeEach } from "vitest";
-import { isRateLimited, rateLimitMap, formatMessage } from "./worker";
+import worker, { isRateLimited, rateLimitMap, formatMessage, isValidEmail } from "./worker";
 
 // MARK: Rate Limiter Tests
 
@@ -197,5 +197,56 @@ describe("Payload validation", () => {
 
   test("category exceeding limit is invalid", () => {
     expect("a".repeat(51).length).toBeGreaterThan(50);
+  });
+});
+
+// MARK: Optional reply email
+
+describe("Reply email", () => {
+  const base = { app_name: "Test App", app_version: "1.0.0", platform: "iOS 18.4", feedback: "Bug in import" };
+
+  test("adds a Reply to line in a code span when an email is given", () => {
+    const msg = formatMessage({ ...base, email: "  john_doe@mail.com " });
+    expect(msg).toContain("Reply to: `john_doe@mail.com`");
+    // After the metadata, before the feedback.
+    expect(msg.indexOf("Reply to:")).toBeGreaterThan(msg.indexOf("Time:"));
+    expect(msg.indexOf("Reply to:")).toBeLessThan(msg.indexOf("Feedback:"));
+  });
+
+  test("leaves the line out when the email is missing or blank", () => {
+    expect(formatMessage(base)).not.toContain("Reply to");
+    expect(formatMessage({ ...base, email: "   " })).not.toContain("Reply to");
+  });
+
+  test("accepts plain addresses and refuses the rest", () => {
+    for (const ok of ["a@b.co", "john_doe@mail.com", "first.last+tag@sub.example.it"]) expect(isValidEmail(ok)).toBe(true);
+    for (const bad of ["", "nope", "a@b", "a b@c.com", "a@b c.com", "`a`@b.com", "a@@b.com", `${"a".repeat(250)}@b.com`]) {
+      expect(isValidEmail(bad)).toBe(false);
+    }
+  });
+
+  async function post(body: unknown, ip: string) {
+    const env = { CHANNEL: "none", RATE_LIMIT_PER_MINUTE: "100" };
+    const request = new Request("https://proxy.test/feedback", {
+      method: "POST",
+      headers: { "cf-connecting-ip": ip },
+      body: JSON.stringify(body),
+    });
+    return worker.fetch(request, env as never);
+  }
+
+  test("the worker refuses an invalid email with 400, before sending anything", async () => {
+    const res = await post({ ...base, email: "not-an-email" }, "10.0.0.1");
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("Invalid email address");
+    const wrongType = await post({ ...base, email: 42 }, "10.0.0.2");
+    expect(wrongType.status).toBe(400);
+  });
+
+  test("a valid or blank email passes validation (reaches the channel step)", async () => {
+    // CHANNEL "none" is the first failure after validation: 500 means validation passed.
+    expect((await post({ ...base, email: "john@mail.com" }, "10.0.0.3")).status).toBe(500);
+    expect((await post({ ...base, email: "" }, "10.0.0.4")).status).toBe(500);
+    expect((await post(base, "10.0.0.5")).status).toBe(500);
   });
 });

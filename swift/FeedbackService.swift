@@ -6,6 +6,7 @@ import Foundation
 
 enum FeedbackError: LocalizedError {
     case emptyFeedback
+    case invalidEmail
     case invalidURL
     case serverError(String)
     case networkError(Error)
@@ -14,6 +15,8 @@ enum FeedbackError: LocalizedError {
         switch self {
         case .emptyFeedback:
             return "Feedback text cannot be empty."
+        case .invalidEmail:
+            return "The email address doesn't look right."
         case .invalidURL:
             return "Invalid API URL."
         case .serverError(let message):
@@ -26,18 +29,28 @@ enum FeedbackError: LocalizedError {
 
 enum FeedbackService {
 
+    /// A plain address: no spaces or backticks (it is shown inside a Markdown code span),
+    /// one @ and a dot after it. The proxy checks the same.
+    static func isValidEmail(_ email: String) -> Bool {
+        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.count <= 254 && trimmed.range(of: #"^[^\s@`]+@[^\s@`]+\.[^\s@`]+$"#, options: .regularExpression) != nil
+    }
+
     /// Sends feedback using the configured delivery channel.
     /// - Parameter category: optional topic (e.g. "Feature"). Pass `nil` to omit.
-    static func send(text: String, category: String? = nil, session: URLSession = .shared) async throws {
+    /// - Parameter email: optional reply address, only when the user wants an answer. Blank = none.
+    static func send(text: String, category: String? = nil, email: String? = nil, session: URLSession = .shared) async throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw FeedbackError.emptyFeedback }
+        let replyTo = email?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        if let replyTo, !isValidEmail(replyTo) { throw FeedbackError.invalidEmail }
 
         let request: URLRequest
         switch FeedbackConfig.channel {
         case .proxy:
-            request = try buildProxyRequest(text: trimmed, category: category)
+            request = try buildProxyRequest(text: trimmed, category: category, email: replyTo)
         default:
-            let message = buildMessage(text: trimmed, category: category)
+            let message = buildMessage(text: trimmed, category: category, email: replyTo)
             switch FeedbackConfig.channel {
             case .telegram:
                 request = try buildTelegramRequest(message: message)
@@ -120,7 +133,7 @@ enum FeedbackService {
         return request
     }
 
-    private static func buildProxyRequest(text: String, category: String?) throws -> URLRequest {
+    private static func buildProxyRequest(text: String, category: String?, email: String?) throws -> URLRequest {
         guard let url = URL(string: FeedbackConfig.proxyURL) else {
             throw FeedbackError.invalidURL
         }
@@ -149,13 +162,14 @@ enum FeedbackService {
         if let category, !category.trimmingCharacters(in: .whitespaces).isEmpty {
             body["category"] = category
         }
+        if let email { body["email"] = email }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return request
     }
 
     // MARK: - Message Formatting
 
-    static func buildMessage(text: String, category: String? = nil) -> String {
+    static func buildMessage(text: String, category: String? = nil, email: String? = nil) -> String {
         let appName = FeedbackConfig.appName
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
@@ -186,6 +200,11 @@ enum FeedbackService {
             lines.append("\u{1F3F7}\u{FE0F} Type: \(category)")
         }
 
+        // In a code span: Markdown can't break on "_", and it copies in one tap.
+        if let email = email?.trimmingCharacters(in: .whitespacesAndNewlines), !email.isEmpty {
+            lines.append("\u{2709}\u{FE0F} Reply to: `\(email)`")
+        }
+
         lines.append(contentsOf: [
             "",
             "\u{1F4AC} Feedback:",
@@ -194,4 +213,8 @@ enum FeedbackService {
 
         return lines.joined(separator: "\n")
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

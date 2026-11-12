@@ -99,7 +99,7 @@ Each message includes:
 
 ### Ideas, not bug reports
 
-FeedPush is one-way and anonymous: you can read a message but never reply to it. That works well for feature ideas and suggestions, which is what the default wording asks for ("Have an idea?"). Bug reports usually need a conversation, screenshots or a screen recording, so point users to a channel where you can answer them (a support email or contact link) instead.
+FeedPush is one-way: you can only answer someone who leaves an email in the optional "Your email (optional)" field (it arrives as a `✉️ Reply to:` line). That works well for feature ideas and suggestions, which is what the default wording asks for ("Have an idea?"). Bug reports usually need a conversation, screenshots or a screen recording, so still point users to a channel built for that (a support email or contact link); the reply field is the safety net for the ones that land here anyway. If your app uses the field, say so in your privacy policy and, on Google Play, declare "Email address" (optional) in Data safety.
 
 ### Topics (optional)
 

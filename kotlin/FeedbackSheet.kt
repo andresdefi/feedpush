@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -35,6 +36,9 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +71,8 @@ private const val COOLDOWN_KEY = "feedpush_last_send_timestamp"
 fun FeedbackSheet(
     onDismiss: () -> Unit,
     feedbackPlaceholder: String = "What can we improve?",
+    emailPlaceholder: String = "Your email (optional)",
+    emailHint: String = "Only if you'd like a reply.",
     sendButtonText: String = "Send",
     successMessage: String = "Thank you for your feedback!",
     errorMessage: String = "Could not send feedback. Please check your connection and try again."
@@ -77,6 +83,7 @@ fun FeedbackSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var feedbackText by remember { mutableStateOf("") }
+    var emailText by remember { mutableStateOf("") }
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
     var isSending by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
@@ -85,8 +92,10 @@ fun FeedbackSheet(
 
     val prefs = remember { context.getSharedPreferences("feedpush", android.content.Context.MODE_PRIVATE) }
 
+    val isEmailInvalid = emailText.isNotBlank() && !FeedbackService.isValidEmail(emailText)
     val isSendDisabled = feedbackText.trim().isEmpty()
             || feedbackText.length > MAX_CHARACTERS
+            || isEmailInvalid
             || isSending
             || cooldownRemaining > 0
 
@@ -188,6 +197,33 @@ fun FeedbackSheet(
                     textAlign = TextAlign.End
                 )
 
+                // Optional reply address: only for people who want an answer (a bug, a question)
+                OutlinedTextField(
+                    value = emailText,
+                    onValueChange = { if (it.length <= 254) emailText = it },
+                    placeholder = { Text(emailPlaceholder) },
+                    singleLine = true,
+                    isError = isEmailInvalid,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Text(
+                    text = emailHint,
+                    fontSize = 12.sp,
+                    color = if (isEmailInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                )
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Send button
@@ -198,7 +234,7 @@ fun FeedbackSheet(
                             showError = false
 
                             val category = FeedbackConfig.categories.getOrNull(selectedCategoryIndex)
-                            val result = FeedbackService.send(context, feedbackText, category)
+                            val result = FeedbackService.send(context, feedbackText, category, emailText)
 
                             when (result) {
                                 is FeedbackResult.Success -> {
@@ -207,6 +243,7 @@ fun FeedbackSheet(
                                     prefs.edit().putLong(COOLDOWN_KEY, System.currentTimeMillis()).apply()
                                     cooldownRemaining = COOLDOWN_DURATION
                                     feedbackText = ""
+                                    emailText = ""
                                     delay(2000)
                                     onDismiss()
                                 }

@@ -17,6 +17,8 @@ const _cooldownKey = 'feedpush_last_send_timestamp';
 
 class FeedbackSheet extends StatefulWidget {
   final String feedbackPlaceholder;
+  final String emailPlaceholder;
+  final String emailHint;
   final String sendButtonText;
   final String successMessage;
   final String errorMessage;
@@ -24,6 +26,8 @@ class FeedbackSheet extends StatefulWidget {
   const FeedbackSheet({
     super.key,
     this.feedbackPlaceholder = "What can we improve?",
+    this.emailPlaceholder = 'Your email (optional)',
+    this.emailHint = "Only if you'd like a reply.",
     this.sendButtonText = 'Send',
     this.successMessage = 'Thank you for your feedback!',
     this.errorMessage =
@@ -37,6 +41,7 @@ class FeedbackSheet extends StatefulWidget {
 class _FeedbackSheetState extends State<FeedbackSheet> {
   final _feedbackController = TextEditingController();
   final _feedbackFocus = FocusNode();
+  final _emailController = TextEditingController();
 
   int _selectedCategoryIndex = 0;
   bool _isSending = false;
@@ -45,9 +50,14 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   int _cooldownRemaining = 0;
   Timer? _cooldownTimer;
 
+  bool get _isEmailInvalid =>
+      _emailController.text.trim().isNotEmpty &&
+      !FeedbackService.isValidEmail(_emailController.text);
+
   bool get _isSendDisabled =>
       _feedbackController.text.trim().isEmpty ||
       _feedbackController.text.length > _maxCharacters ||
+      _isEmailInvalid ||
       _isSending ||
       _cooldownRemaining > 0;
 
@@ -55,6 +65,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   void initState() {
     super.initState();
     _feedbackController.addListener(() => setState(() {}));
+    _emailController.addListener(() => setState(() {}));
     _checkExistingCooldown();
   }
 
@@ -62,6 +73,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   void dispose() {
     _feedbackController.dispose();
     _feedbackFocus.dispose();
+    _emailController.dispose();
     _cooldownTimer?.cancel();
     super.dispose();
   }
@@ -113,6 +125,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
     final result = await FeedbackService.send(
       text: _feedbackController.text,
       category: category,
+      email: _emailController.text,
     );
 
     if (!mounted) return;
@@ -124,6 +137,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       setState(() => _cooldownRemaining = _cooldownDuration);
       _startCooldownTimer();
       _feedbackController.clear();
+      _emailController.clear();
 
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) Navigator.of(context).pop();
@@ -208,6 +222,27 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                     ),
                     counterText:
                         '${_feedbackController.text.length} / $_maxCharacters',
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Optional reply address: only for people who want an answer
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.none,
+                  textInputAction: TextInputAction.done,
+                  maxLength: 254,
+                  decoration: InputDecoration(
+                    hintText: widget.emailPlaceholder,
+                    helperText: _isEmailInvalid ? null : widget.emailHint,
+                    errorText: _isEmailInvalid ? widget.emailHint : null,
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

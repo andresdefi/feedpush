@@ -18,6 +18,14 @@ interface FeedbackPayload {
   platform: string;
   feedback: string;
   category?: string; // Optional topic (e.g. "Feature", "Improvement")
+  email?: string; // Optional, only when the user wants a reply
+}
+
+// A plain address: no spaces, no backticks (it is shown inside a Markdown code span), one @, a dot after it.
+const EMAIL_PATTERN = /^[^\s@`]+@[^\s@`]+\.[^\s@`]+$/;
+
+export function isValidEmail(email: string): boolean {
+  return email.length <= 254 && EMAIL_PATTERN.test(email);
 }
 
 // Simple in-memory rate limiter (resets on worker restart, which is fine)
@@ -52,6 +60,12 @@ export function formatMessage(payload: FeedbackPayload): string {
   const category = payload.category?.trim();
   if (category) {
     lines.push(`\u{1F3F7}\u{FE0F} Type: ${category}`);
+  }
+
+  // Optional reply address, in a code span so Markdown can't break on "_" and it copies in one tap
+  const email = payload.email?.trim();
+  if (email) {
+    lines.push(`\u{2709}\u{FE0F} Reply to: \`${email}\``);
   }
 
   lines.push("", `\u{1F4AC} Feedback:`, payload.feedback);
@@ -139,6 +153,16 @@ export default {
         { ok: false, error: "Category exceeds 50 characters" },
         { status: 400 }
       );
+    }
+
+    if (payload.email !== undefined && payload.email !== null) {
+      const email = typeof payload.email === "string" ? payload.email.trim() : "";
+      if (typeof payload.email !== "string" || (email && !isValidEmail(email))) {
+        return Response.json(
+          { ok: false, error: "Invalid email address" },
+          { status: 400 }
+        );
+      }
     }
 
     if (!payload.app_name || !payload.app_version || !payload.platform) {

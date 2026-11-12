@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sendFeedback } from "./FeedbackService";
+import { isValidEmail, sendFeedback } from "./FeedbackService";
 import { FeedbackConfig } from "./FeedbackConfig";
 
 // FeedbackSheet
@@ -30,6 +30,8 @@ interface FeedbackSheetProps {
   visible: boolean;
   onDismiss: () => void;
   feedbackPlaceholder?: string;
+  emailPlaceholder?: string;
+  emailHint?: string;
   sendButtonText?: string;
   successMessage?: string;
   errorMessage?: string;
@@ -39,6 +41,8 @@ export function FeedbackSheet({
   visible,
   onDismiss,
   feedbackPlaceholder = "What can we improve?",
+  emailPlaceholder = "Your email (optional)",
+  emailHint = "Only if you'd like a reply.",
   sendButtonText = "Send",
   successMessage = "Thank you for your feedback!",
   errorMessage = "Could not send feedback. Please check your connection and try again.",
@@ -47,6 +51,7 @@ export function FeedbackSheet({
   const isDark = colorScheme === "dark";
 
   const [feedbackText, setFeedbackText] = useState("");
+  const [emailText, setEmailText] = useState("");
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0);
   const [isSending, setIsSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,9 +59,11 @@ export function FeedbackSheet({
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const isEmailInvalid = emailText.trim().length > 0 && !isValidEmail(emailText);
   const isSendDisabled =
     feedbackText.trim().length === 0 ||
     feedbackText.length > MAX_CHARACTERS ||
+    isEmailInvalid ||
     isSending ||
     cooldownRemaining > 0;
 
@@ -104,7 +111,7 @@ export function FeedbackSheet({
         ? FeedbackConfig.categories[selectedCategoryIndex]
         : undefined;
 
-    const result = await sendFeedback(feedbackText, category);
+    const result = await sendFeedback(feedbackText, category, emailText);
 
     if (result.success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -116,6 +123,7 @@ export function FeedbackSheet({
       startCooldownTimer(COOLDOWN_DURATION);
 
       setFeedbackText("");
+      setEmailText("");
 
       setTimeout(() => {
         setShowSuccess(false);
@@ -126,7 +134,7 @@ export function FeedbackSheet({
     }
 
     setIsSending(false);
-  }, [feedbackText, selectedCategoryIndex, onDismiss, startCooldownTimer]);
+  }, [feedbackText, emailText, selectedCategoryIndex, onDismiss, startCooldownTimer]);
 
   const handleDismiss = useCallback(() => {
     setShowSuccess(false);
@@ -225,6 +233,26 @@ export function FeedbackSheet({
             ]}
           >
             {feedbackText.length} / {MAX_CHARACTERS}
+          </Text>
+
+          {/* Optional reply address: only for people who want an answer */}
+          <TextInput
+            style={[styles.emailInput, { backgroundColor: inputBg, color: textColor }]}
+            placeholder={emailPlaceholder}
+            placeholderTextColor={dimColor}
+            value={emailText}
+            onChangeText={(t) => {
+              if (t.length <= 254) setEmailText(t);
+            }}
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+          />
+          <Text style={[styles.emailHint, { color: isEmailInvalid ? "#FF3B30" : dimColor }]}>
+            {emailHint}
           </Text>
 
           {/* Send button */}
@@ -326,6 +354,16 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 12,
     textAlign: "right",
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  emailInput: {
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+  },
+  emailHint: {
+    fontSize: 12,
     marginTop: 4,
     marginBottom: 24,
   },

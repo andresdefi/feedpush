@@ -10,13 +10,28 @@ export type FeedbackResult =
   | { success: true }
   | { success: false; error: string };
 
+// A plain address: no spaces or backticks (it is shown inside a Markdown code
+// span), one @ and a dot after it. The proxy checks the same.
+const EMAIL_PATTERN = /^[^\s@`]+@[^\s@`]+\.[^\s@`]+$/;
+
+export function isValidEmail(email: string): boolean {
+  const trimmed = email.trim();
+  return trimmed.length <= 254 && EMAIL_PATTERN.test(trimmed);
+}
+
+/** `email` is an optional reply address, only when the user wants an answer; blank = none. */
 export async function sendFeedback(
   text: string,
-  category?: string
+  category?: string,
+  email?: string
 ): Promise<FeedbackResult> {
   const trimmed = text.trim();
   if (!trimmed) {
     return { success: false, error: "Feedback text cannot be empty." };
+  }
+  const replyTo = email?.trim() || undefined;
+  if (replyTo && !isValidEmail(replyTo)) {
+    return { success: false, error: "The email address doesn't look right." };
   }
 
   let url: string;
@@ -24,7 +39,7 @@ export async function sendFeedback(
 
   switch (FeedbackConfig.channel) {
     case "telegram": {
-      const message = buildMessage(trimmed, category);
+      const message = buildMessage(trimmed, category, replyTo);
       const token = FeedbackConfig.botToken;
       url = `https://api.telegram.org/bot${token}/sendMessage`;
       body = JSON.stringify({
@@ -35,13 +50,13 @@ export async function sendFeedback(
       break;
     }
     case "discord": {
-      const message = buildMessage(trimmed, category);
+      const message = buildMessage(trimmed, category, replyTo);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ content: message });
       break;
     }
     case "slack": {
-      const message = buildMessage(trimmed, category);
+      const message = buildMessage(trimmed, category, replyTo);
       url = FeedbackConfig.webhookURL;
       body = JSON.stringify({ text: message });
       break;
@@ -59,6 +74,7 @@ export async function sendFeedback(
         platform: `${platformName} ${osVersion}`,
         feedback: trimmed,
         ...(category && category.trim() ? { category } : {}),
+        ...(replyTo ? { email: replyTo } : {}),
       });
       break;
     }
@@ -88,7 +104,7 @@ export async function sendFeedback(
   }
 }
 
-export function buildMessage(text: string, category?: string): string {
+export function buildMessage(text: string, category?: string, email?: string): string {
   const appName = FeedbackConfig.appName;
   const appVersion =
     Application.nativeApplicationVersion ?? "Unknown";
@@ -110,6 +126,11 @@ export function buildMessage(text: string, category?: string): string {
 
   if (category && category.trim()) {
     lines.push(`\u{1F3F7}\u{FE0F} Type: ${category}`);
+  }
+
+  // In a code span: Markdown can't break on "_", and it copies in one tap.
+  if (email && email.trim()) {
+    lines.push(`\u{2709}\u{FE0F} Reply to: \`${email.trim()}\``);
   }
 
   lines.push("", `\u{1F4AC} Feedback:`, text);

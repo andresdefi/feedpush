@@ -116,7 +116,8 @@ No app update needed -- the proxy handles the routing.
   "app_version": "1.0.0",
   "platform": "iOS 18.4",
   "feedback": "This is great!",
-  "category": "Feature"
+  "category": "Feature",
+  "email": "maria_rossi@mail.it"
 }
 ```
 
@@ -124,13 +125,18 @@ No app update needed -- the proxy handles the routing.
 forwarded message. Omit it (older app versions do) and the message is formatted
 exactly as before.
 
+`email` is optional too: the reply address, when the user wants an answer. It
+must be a plain address (no spaces or backticks, at most 254 characters); the
+worker adds a `✉️ Reply to:` line with the address in a code span. A blank email
+is treated as none.
+
 **Success response (200):**
 ```json
 { "ok": true }
 ```
 
 **Error responses:**
-- `400` -- Invalid JSON, missing fields, empty feedback, feedback exceeds 2000 characters, or category exceeds 50 characters
+- `400` -- Invalid JSON, missing fields, empty feedback, feedback exceeds 2000 characters, category exceeds 50 characters, or an invalid email
 - `404` -- Wrong endpoint (only `/feedback` is valid)
 - `405` -- Wrong HTTP method (only POST)
 - `429` -- Rate limited

@@ -153,6 +153,38 @@ class FeedbackServiceMessageTests {
         val message = FeedbackService.buildMessage(null, "Test", "   ")
         assertTrue(!message.contains("Type:"))
     }
+
+    // MARK: Optional reply email
+
+    @Test
+    fun `message contains reply line in a code span`() {
+        val message = FeedbackService.buildMessage(null, "Test", null, " john_doe@mail.com ")
+        assertTrue(message.contains("Reply to: `john_doe@mail.com`"))
+        assertTrue(message.indexOf("Time:") < message.indexOf("Reply to:"))
+        assertTrue(message.indexOf("Reply to:") < message.indexOf("Feedback:"))
+    }
+
+    @Test
+    fun `message omits reply line without email`() {
+        assertTrue(!FeedbackService.buildMessage(null, "Test").contains("Reply to"))
+        assertTrue(!FeedbackService.buildMessage(null, "Test", null, "  ").contains("Reply to"))
+    }
+
+    @Test
+    fun `proxy payload carries the email only when given`() {
+        val (_, withEmail) = FeedbackService.buildProxyPayload(null, "Hi", null, "john@mail.com")
+        assertEquals("john@mail.com", withEmail.getString("email"))
+        val (_, without) = FeedbackService.buildProxyPayload(null, "Hi", null, " ")
+        assertTrue(!without.has("email"))
+    }
+
+    @Test
+    fun `email validation`() {
+        for (ok in listOf("a@b.co", "john_doe@mail.com", "first.last+tag@sub.example.it")) assertTrue(ok, FeedbackService.isValidEmail(ok))
+        for (bad in listOf("", "nope", "a@b", "a b@c.com", "`a`@b.com", "a@@b.com", "a".repeat(250) + "@b.com")) {
+            assertTrue(bad, !FeedbackService.isValidEmail(bad))
+        }
+    }
 }
 
 // MARK: FeedbackConfig Channel Tests
@@ -176,7 +208,8 @@ class FeedbackConfigChannelTests {
     @Test
     fun `all channels are accessible`() {
         val channels = FeedbackChannel.entries
-        assertEquals(3, channels.size)
+        assertEquals(4, channels.size)
+        assertTrue(channels.contains(FeedbackChannel.PROXY))
         assertTrue(channels.contains(FeedbackChannel.TELEGRAM))
         assertTrue(channels.contains(FeedbackChannel.DISCORD))
         assertTrue(channels.contains(FeedbackChannel.SLACK))

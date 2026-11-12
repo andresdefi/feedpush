@@ -129,6 +129,27 @@ final class FeedbackServiceMessageTests: XCTestCase {
         let message = FeedbackService.buildMessage(text: "Test", category: "   ")
         XCTAssertFalse(message.contains("Type:"))
     }
+
+    // MARK: Optional reply email
+
+    func testMessageContainsReplyLineInCodeSpan() {
+        let message = FeedbackService.buildMessage(text: "Test", email: " john_doe@mail.com ")
+        XCTAssertTrue(message.contains("Reply to: `john_doe@mail.com`"))
+        XCTAssertTrue(message.range(of: "Time:")!.lowerBound < message.range(of: "Reply to:")!.lowerBound)
+        XCTAssertTrue(message.range(of: "Reply to:")!.lowerBound < message.range(of: "Feedback:")!.lowerBound)
+    }
+
+    func testMessageOmitsReplyLineWithoutEmail() {
+        XCTAssertFalse(FeedbackService.buildMessage(text: "Test").contains("Reply to"))
+        XCTAssertFalse(FeedbackService.buildMessage(text: "Test", email: "  ").contains("Reply to"))
+    }
+
+    func testEmailValidation() {
+        for ok in ["a@b.co", "john_doe@mail.com", "first.last+tag@sub.example.it"] { XCTAssertTrue(FeedbackService.isValidEmail(ok), ok) }
+        for bad in ["", "nope", "a@b", "a b@c.com", "`a`@b.com", "a@@b.com", String(repeating: "a", count: 250) + "@b.com"] {
+            XCTAssertFalse(FeedbackService.isValidEmail(bad), bad)
+        }
+    }
 }
 
 // MARK: - FeedbackService Send Validation Tests
@@ -215,6 +236,16 @@ final class FeedbackServiceSendTests: XCTestCase {
         }
     }
 
+    func testSendThrowsOnInvalidEmail() async {
+        do {
+            try await FeedbackService.send(text: "Hello", email: "not-an-email")
+            XCTFail("Expected invalidEmail")
+        } catch FeedbackError.invalidEmail {
+        } catch {
+            XCTFail("Expected invalidEmail, got \(error)")
+        }
+    }
+
     func testSendWithMockSession_RequestFormat() async throws {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
@@ -247,7 +278,13 @@ final class FeedbackServiceSendTests: XCTestCase {
         XCTAssertTrue(request.url!.absoluteString.contains("/sendMessage"))
 
         // Verify body contains required fields
-        let bodyData = try XCTUnwrap(request.httpBody)
+        // URLSession hands the body to URLProtocol as a stream, not as httpBody.
+        let bodyData = try XCTUnwrap(request.httpBody ?? request.httpBodyStream.map { stream in
+            stream.open(); defer { stream.close() }
+            var data = Data(), buffer = [UInt8](repeating: 0, count: 4096)
+            while stream.hasBytesAvailable { let n = stream.read(&buffer, maxLength: buffer.count); if n <= 0 { break }; data.append(buffer, count: n) }
+            return data
+        })
         let bodyJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertEqual(bodyJSON["chat_id"] as? String, FeedbackConfig.chatID)
         XCTAssertEqual(bodyJSON["parse_mode"] as? String, "Markdown")
@@ -272,7 +309,7 @@ final class FeedbackConfigChannelTests: XCTestCase {
         // Just verify the channel property exists and is accessible
         let channel = FeedbackConfig.channel
         switch channel {
-        case .telegram, .discord, .slack:
+        case .proxy, .telegram, .discord, .slack:
             break // all valid
         }
     }
@@ -285,6 +322,10 @@ final class FeedbackErrorTests: XCTestCase {
     func testEmptyFeedbackDescription() {
         let error = FeedbackError.emptyFeedback
         XCTAssertEqual(error.errorDescription, "Feedback text cannot be empty.")
+    }
+
+    func testInvalidEmailDescription() {
+        XCTAssertEqual(FeedbackError.invalidEmail.errorDescription, "The email address doesn't look right.")
     }
 
     func testInvalidURLDescription() {

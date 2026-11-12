@@ -9,11 +9,14 @@ struct FeedbackSheet: View {
 
     // Configurable strings
     var feedbackPlaceholder: String = "What can we improve?"
+    var emailPlaceholder: String = "Your email (optional)"
+    var emailHint: String = "Only if you'd like a reply."
     var sendButtonText: String = "Send"
     var successMessage: String = "Thank you for your feedback!"
     var errorMessage: String = "Could not send feedback. Please check your connection and try again."
 
     @State private var feedbackText = ""
+    @State private var emailText = ""
     @State private var selectedCategory = FeedbackConfig.categories.first ?? ""
     @State private var isSending = false
     @State private var showSuccess = false
@@ -28,7 +31,7 @@ struct FeedbackSheet: View {
     private let cooldownKey = "feedpush_last_send_timestamp"
 
     private enum Field {
-        case feedback
+        case feedback, email
     }
 
     var body: some View {
@@ -39,6 +42,7 @@ struct FeedbackSheet: View {
                         categoryPicker
                     }
                     feedbackField
+                    emailField
                     sendButton
                 }
                 .padding(20)
@@ -114,6 +118,32 @@ struct FeedbackSheet: View {
         }
     }
 
+    // MARK: - Email Field
+
+    /// Optional: only for people who want an answer (a bug, a question).
+    private var emailField: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField(emailPlaceholder, text: $emailText)
+                .focused($focusedField, equals: .email)
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .padding(12)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            Text(emailHint)
+                .font(.caption)
+                .foregroundStyle(isEmailInvalid ? .red : .secondary)
+        }
+    }
+
+    private var isEmailInvalid: Bool {
+        let email = emailText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !email.isEmpty && !FeedbackService.isValidEmail(email)
+    }
+
     // MARK: - Send Button
 
     private var sendButton: some View {
@@ -143,6 +173,7 @@ struct FeedbackSheet: View {
     private var isSendDisabled: Bool {
         feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         || feedbackText.count > maxCharacters
+        || isEmailInvalid
         || isSending
         || cooldownRemaining > 0
     }
@@ -173,13 +204,14 @@ struct FeedbackSheet: View {
 
         do {
             let category = FeedbackConfig.categories.isEmpty ? nil : selectedCategory
-            try await FeedbackService.send(text: feedbackText, category: category)
+            try await FeedbackService.send(text: feedbackText, category: category, email: emailText)
             triggerHaptic()
             withAnimation { showSuccess = true }
             saveCooldownTimestamp()
             cooldownRemaining = cooldownDuration
             startCountdown()
             feedbackText = ""
+            emailText = ""
 
             try? await Task.sleep(for: .seconds(2))
             dismiss()

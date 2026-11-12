@@ -4,7 +4,7 @@
 // These tests verify config decoding, message formatting, and input validation.
 // The buildMessage function is tested with mocked Platform and Application values.
 
-import { buildMessage } from "./FeedbackService";
+import { buildMessage, isValidEmail } from "./FeedbackService";
 
 // Mock expo-application
 jest.mock("expo-application", () => ({
@@ -226,4 +226,27 @@ describe("sendFeedback", () => {
     expect(result.error).toContain("Network");
   });
 
+});
+
+// MARK: Optional reply email
+
+describe("Reply email", () => {
+  test("adds a Reply to line in a code span", () => {
+    const msg = buildMessage("Test", undefined, " john_doe@mail.com ");
+    expect(msg).toContain("Reply to: `john_doe@mail.com`");
+    expect(msg.indexOf("Time:")).toBeLessThan(msg.indexOf("Reply to:"));
+    expect(msg.indexOf("Reply to:")).toBeLessThan(msg.indexOf("Feedback:"));
+  });
+
+  test("leaves the line out without an email", () => {
+    expect(buildMessage("Test")).not.toContain("Reply to");
+    expect(buildMessage("Test", undefined, "  ")).not.toContain("Reply to");
+  });
+
+  test("accepts plain addresses and refuses the rest", () => {
+    for (const ok of ["a@b.co", "john_doe@mail.com", "first.last+tag@sub.example.it"]) expect(isValidEmail(ok)).toBe(true);
+    for (const bad of ["", "nope", "a@b", "a b@c.com", "`a`@b.com", "a@@b.com", `${"a".repeat(250)}@b.com`]) {
+      expect(isValidEmail(bad)).toBe(false);
+    }
+  });
 });
